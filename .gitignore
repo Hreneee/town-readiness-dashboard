@@ -24,3 +24,4 @@ node_modules/
 
 # Local generation workspace; deployed dashboard is committed from outputs/
 work/
+.vercel
