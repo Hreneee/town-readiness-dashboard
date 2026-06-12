@@ -1,0 +1,26 @@
+.DS_Store
+Thumbs.db
+
+# Local/editor state
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node/Vercel local state
+node_modules/
+.vercel/
+
+# Local environment files
+.env
+.env.*
+
+# Local generation workspace; deployed dashboard is committed from outputs/
+work/

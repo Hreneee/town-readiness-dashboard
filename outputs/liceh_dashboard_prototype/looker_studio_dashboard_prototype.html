@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Town Readiness Assessment</title>
+  <style>
+    :root {
+      --font-family-base: Arial, Helvetica, sans-serif;
+      --font-size-xs: 12px;
+      --font-size-sm: 13px;
+      --font-size-md: 15px;
+      --font-size-lg: 18px;
+      --font-size-xl: 24px;
+      --font-size-2xl: 30px;
+      --font-weight-regular: 400;
+      --font-weight-medium: 600;
+      --font-weight-bold: 700;
+      --font-weight-heavy: 800;
+      --color-ink: #1f2f2f;
+      --color-muted: #5f6f6b;
+      --color-surface: #ffffff;
+      --color-page: #f4f7f4;
+      --color-line: #cad6d1;
+      --color-primary: #1f6fa9;
+      --color-accent: #6d7f8f;
+      --color-soft: #eef4f8;
+      --status-success-bg: #e7f3ea;
+      --status-success-text: #225b33;
+      --status-warning-bg: #f6efd8;
+      --status-warning-text: #6b541b;
+      --status-neutral-bg: #eef1f0;
+      --status-neutral-text: #475653;
+      --status-info-bg: #e8f1f5;
+      --status-info-text: #24536b;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --radius-none: 0;
+      --radius-sm: 2px;
+      --radius-md: 4px;
+      --shadow-card: 0 1px 2px rgba(31, 47, 47, 0.08);
+      --shadow-raised: 0 8px 20px rgba(31, 47, 47, 0.08);
+      --card-bg: var(--color-surface);
+      --card-border: 1px solid var(--color-line);
+      --card-radius: var(--radius-none);
+      --card-padding: var(--space-4);
+      --card-shadow: var(--shadow-card);
+      --section-gap: var(--space-5);
+      --section-gap-lg: var(--space-6);
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--color-page); color:var(--color-ink); font-family:var(--font-family-base); font-size:var(--font-size-md); line-height:1.5; }
+    header { background:var(--color-surface); border-bottom:4px solid var(--color-primary); box-shadow:var(--shadow-card); padding:var(--space-5) var(--space-6); }
+    .brand-row { display:flex; gap:var(--space-4); align-items:center; justify-content:space-between; max-width:1320px; margin:0 auto; }
+    .brand-lockup { display:flex; gap:var(--space-4); align-items:center; min-width:0; }
+    .org-name { margin:0 0 var(--space-1); color:var(--color-primary); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); text-transform:uppercase; letter-spacing:.04em; }
+    h1 { margin:0 0 var(--space-3); font-size:var(--font-size-2xl); font-weight:var(--font-weight-heavy); letter-spacing:0; line-height:1.15; }
+    h2 { margin:0 0 var(--space-4); font-size:var(--font-size-xl); font-weight:var(--font-weight-heavy); line-height:1.2; }
+    h3 { margin:0 0 var(--space-3); font-size:var(--font-size-lg); font-weight:var(--font-weight-bold); line-height:1.25; }
+    p { margin:0 0 var(--space-3); color:var(--color-muted); }
+    label { display:block; margin-bottom:var(--space-2); color:var(--color-ink); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }
+    a { color:var(--color-primary); }
+    .section-nav { align-self:start; position:sticky; top:var(--space-4); display:grid; gap:var(--space-2); background:var(--color-surface); border:1px solid var(--color-line); box-shadow:var(--shadow-card); padding:var(--space-3); }
+    .section-nav a { border-left:3px solid transparent; color:var(--color-ink); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); padding:var(--space-2); text-decoration:none; }
+    .section-nav a:hover, .section-nav a:focus-visible { border-left-color:var(--color-primary); background:var(--color-soft); outline:none; }
+    select, .toggle button { border:1px solid var(--color-line); background:var(--color-surface); color:var(--color-ink); padding:10px 13px; border-radius:var(--radius-sm); font-family:var(--font-family-base); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); cursor:pointer; transition:background-color .15s ease, border-color .15s ease, color .15s ease; }
+    select:hover, .toggle button:hover { border-color:var(--color-primary); }
+    select:focus-visible, .toggle button:focus-visible, summary:focus-visible, a:focus-visible { outline:3px solid var(--color-accent); outline-offset:2px; }
+    .toggle button.active { background:var(--color-primary); border-color:var(--color-primary); color:var(--color-surface); }
+    select { min-width:280px; max-width:100%; }
+    main { max-width:1320px; margin:0 auto; padding:var(--space-5); }
+    .dashboard-shell { display:grid; grid-template-columns:220px minmax(0,1fr); gap:var(--space-5); align-items:start; }
+    .dashboard-content { min-width:0; }
+    .page { display:block; scroll-margin-top:var(--space-5); margin-bottom:var(--section-gap-lg); }
+    .section-intro { color:var(--color-muted); font-size:var(--font-size-md); max-width:900px; }
+    .overview-intro { max-width:none; width:100%; }
+    .overview-subheading { color:var(--color-ink); font-size:var(--font-size-lg); font-weight:var(--font-weight-bold); margin:var(--space-5) 0 var(--space-3); }
+    .overview-subheading .accent-number { color:var(--color-primary); }
+    .panel, .metric, .notice { background:var(--card-bg); border:var(--card-border); border-radius:var(--card-radius); box-shadow:var(--card-shadow); padding:var(--card-padding); }
+    .panel { margin-bottom:0; min-width:0; }
+    .notice { border-left:6px solid var(--color-primary); margin-bottom:var(--space-4); }
+    .disclaimer { border-left-color:var(--color-accent); }
+    .grid { display:grid; gap:var(--space-4); }
+    .grid > * { min-width:0; }
+    .kpis { grid-template-columns:repeat(5,minmax(130px,1fr)); gap:var(--space-3); margin:var(--space-4) 0 var(--section-gap); }
+    .kpis .metric { display:flex; flex-direction:column; justify-content:center; min-height:112px; padding:var(--space-3); text-align:center; }
+    .kpis .metric-title { order:2; margin-top:var(--space-2); }
+    .kpis .metric-value { order:1; }
+    .kpis .metric-note { order:3; margin-top:var(--space-1); }
+    .kpis .metric-title { align-items:center; display:flex; justify-content:center; }
+    .kpis .metric-value { text-align:center; }
+    .selected-kpis { gap:var(--space-2); grid-template-columns:repeat(3,minmax(110px,1fr)); grid-auto-rows:1fr; height:390px; margin-bottom:0; }
+    .selected-kpis .metric { align-content:start; display:grid; grid-template-rows:42px 36px 1fr; min-height:0; overflow:hidden; padding:6px; text-align:center; }
+    .selected-kpis .metric-title { align-items:center; display:flex; font-size:10px; justify-content:center; line-height:1.18; min-height:0; }
+    .selected-kpis .metric-value { align-items:center; display:flex; font-size:20px; justify-content:center; line-height:1; margin:0; }
+    .selected-kpis .metric-meta { font-size:10px; line-height:1.08; margin-top:2px; text-align:center; }
+    .selected-kpis .comparison-delta, .selected-kpis .comparison-rank { font-size:10px; line-height:1.08; }
+    .two { grid-template-columns:1fr 1fr; }
+    .wide-narrow { grid-template-columns:1.35fr .65fr; }
+    .overview-charts { grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr); align-items:stretch; }
+    .overview-charts .panel { display:flex; flex-direction:column; height:380px; min-height:0; }
+    .overview-charts .compact-chart { columns:1; }
+    .overview-charts #rank-chart { column-count:auto; column-width:auto; columns:auto; flex:1; min-height:0; overflow-x:hidden; overflow-y:auto; padding-right:var(--space-2); scrollbar-gutter:stable; }
+    .overview-charts #rank-chart .bar-row { grid-template-columns:minmax(130px,210px) minmax(80px,1fr) 64px; }
+    .overview-charts #rank-chart .bar-row { break-inside:auto; }
+    .overview-charts #rank-chart .bar-label { overflow-wrap:anywhere; }
+    .metric-title { color:var(--color-muted); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); min-height:36px; }
+    .metric-value { color:var(--color-primary); font-size:var(--font-size-2xl); font-weight:var(--font-weight-heavy); line-height:1.1; margin:var(--space-2) 0; overflow-wrap:anywhere; }
+    .metric-note { color:var(--color-muted); font-size:var(--font-size-xs); margin:0; }
+    .metric-meta { display:grid; gap:var(--space-1); }
+    .comparison-delta { display:block; font-size:var(--font-size-xs); font-weight:var(--font-weight-heavy); }
+    .comparison-delta.above { color:#1f7a43; }
+    .comparison-delta.below { color:#b42318; }
+    .comparison-delta.neutral { color:var(--color-muted); }
+    .comparison-rank { display:block; color:var(--color-muted); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); }
+    .bar-row { display:grid; grid-template-columns:minmax(160px,240px) 1fr 72px; gap:var(--space-3); align-items:center; margin:var(--space-2) 0; }
+    .bar-label { font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }
+    .bar-track { background:var(--color-soft); height:16px; border:1px solid var(--color-line); border-radius:var(--radius-sm); overflow:hidden; }
+    .bar-fill { background:var(--color-primary); height:100%; min-width:2px; }
+    .bar-value { text-align:right; font-weight:var(--font-weight-bold); font-variant-numeric:tabular-nums; }
+    .compact-chart { columns:2; column-gap:var(--space-5); }
+    .compact-chart .bar-row { break-inside:avoid; grid-template-columns:minmax(132px,190px) 1fr 64px; }
+    .hist { display:flex; align-items:flex-end; gap:var(--space-2); height:220px; border-left:1px solid var(--color-line); border-bottom:1px solid var(--color-line); padding:var(--space-2); }
+    .hist-bin { flex:1; min-width:54px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:var(--space-2); height:100%; }
+    .hist-bar { width:100%; background:var(--color-primary); min-height:2px; border-radius:var(--radius-sm) var(--radius-sm) 0 0; }
+    .hist-count { color:var(--color-primary); font-weight:var(--font-weight-heavy); }
+    .hist-label { color:var(--color-muted); font-size:var(--font-size-xs); min-height:34px; text-align:center; }
+    .profile-head { display:grid; grid-template-columns:minmax(320px,.95fr) minmax(420px,1.05fr); gap:var(--space-5); align-items:stretch; margin:var(--space-4) 0; }
+    .map-placeholder { min-height:230px; background:repeating-linear-gradient(45deg, var(--color-soft), var(--color-soft) 10px, var(--color-page) 10px, var(--color-page) 20px); border:1px solid var(--color-line); box-shadow:var(--shadow-card); display:flex; align-items:center; justify-content:center; text-align:center; padding:var(--space-4); color:var(--color-muted); font-weight:var(--font-weight-bold); }
+    .map-panel { min-height:390px; background:var(--color-soft); border:1px solid var(--color-line); box-shadow:var(--shadow-card); overflow:hidden; position:relative; }
+    .map-panel iframe { width:100%; height:390px; border:0; display:block; background:var(--color-soft); }
+    .map-fallback { margin:0; padding:var(--space-3); color:var(--color-muted); font-size:var(--font-size-xs); background:var(--color-surface); border-top:1px solid var(--color-line); }
+    .donut-wrap { display:grid; grid-template-columns:220px 1fr; gap:var(--space-4); align-items:center; }
+    .donut { width:210px; height:210px; border-radius:50%; border:1px solid var(--color-line); background:conic-gradient(var(--color-primary) 0deg, var(--color-primary) 1deg, var(--color-soft) 1deg); position:relative; box-shadow:var(--shadow-card); }
+    .donut::after { content:""; position:absolute; inset:54px; background:var(--color-surface); border:1px solid var(--color-line); border-radius:50%; }
+    .donut-label { color:#ffffff; font-size:11px; font-weight:var(--font-weight-heavy); left:50%; line-height:1; pointer-events:none; position:absolute; text-shadow:0 1px 2px rgba(0,0,0,.45); top:50%; transform:translate(-50%, -50%); z-index:1; }
+    .legend { display:grid; gap:var(--space-2); max-height:260px; overflow:auto; }
+    .legend-item { display:grid; grid-template-columns:14px 1fr auto auto; gap:var(--space-2); align-items:center; font-size:var(--font-size-sm); }
+    .swatch { width:14px; height:14px; border:1px solid var(--color-surface); border-radius:var(--radius-sm); }
+    table { width:100%; border-collapse:collapse; font-size:var(--font-size-sm); }
+    th, td { text-align:left; vertical-align:top; padding:10px var(--space-3); border-bottom:1px solid var(--color-line); }
+    th { background:var(--color-soft); color:var(--color-ink); font-weight:var(--font-weight-bold); }
+    tbody tr:nth-child(even) { background:var(--color-page); }
+    .scroll { overflow:auto; max-height:520px; border:1px solid var(--color-line); }
+    .category { margin-top:var(--space-6); }
+    .category h3 { border-top:1px solid var(--color-line); padding-top:var(--space-5); }
+    .category .content { background:transparent; padding:0; }
+    .category-blurb { margin:0; }
+    .resource-empty { color:var(--color-muted); margin:0; max-width:760px; }
+    .method-section { margin-bottom:var(--section-gap); }
+    .section-block { margin-top:var(--section-gap); }
+    .benchmark-chart { margin-top:var(--space-3); }
+    .nys-table-wrap { margin-top:var(--space-4); max-height:310px; }
+    .status-pill { display:inline-block; border-radius:999px; padding:var(--space-1) var(--space-2); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); }
+    .status-pill.success { background:var(--status-success-bg); color:var(--status-success-text); }
+    .status-pill.warning { background:var(--status-warning-bg); color:var(--status-warning-text); }
+    .status-pill.neutral { background:var(--status-neutral-bg); color:var(--status-neutral-text); }
+    .status-pill.info { background:var(--status-info-bg); color:var(--status-info-text); }
+    @media (max-width: 1000px) {
+      header { position:static; }
+      main { padding:var(--space-4); }
+      .brand-row, .brand-lockup, .dashboard-shell { display:block; }
+      .section-nav { position:static; margin-bottom:var(--space-4); }
+      .kpis { grid-template-columns:repeat(5,minmax(110px,1fr)); }
+      .selected-kpis, .two, .wide-narrow, .overview-charts, .profile-head, .donut-wrap { grid-template-columns:1fr; }
+      .compact-chart { columns:1; }
+      .hist { gap:var(--space-1); }
+      .hist-bin { min-width:0; }
+      .bar-row { grid-template-columns:1fr; gap:var(--space-1); }
+      .bar-value { text-align:left; }
+      h1 { font-size:var(--font-size-xl); }
+    }
+    :root {
+      --color-primary:#0849A7;
+      --color-primary-dark:#05346f;
+      --color-primary-soft:#eaf3ff;
+      --color-primary-line:#c8dcf4;
+      --color-ink:#000000;
+      --color-muted:#475467;
+      --color-page:#FAFBFC;
+      --color-line:#e6edf4;
+      --color-soft:#f3f7fb;
+      --card-radius:14px;
+      --card-border:1px solid rgba(8,73,167,.08);
+      --card-shadow:0 8px 24px rgba(16, 24, 40, .06);
+      --shadow-card:0 8px 24px rgba(16, 24, 40, .06);
+      --shadow-raised:0 16px 40px rgba(16, 24, 40, .10);
+    }
+    body { color:var(--color-ink); background:var(--color-page); line-height:1.58; overflow:hidden; }
+    header { display:none; }
+    main { max-width:none; margin:0 0 0 280px; padding:0; height:100vh; overflow:hidden; }
+    body.nav-collapsed main { margin-left:64px; }
+    .dashboard-shell { display:block; height:100%; }
+    .dashboard-content { height:100vh; overflow:auto; padding:var(--space-6); }
+    .section-nav { position:fixed; top:0; left:0; width:280px; height:100vh; align-content:start; background:#ffffff; border:0; border-right:1px solid var(--color-line); box-shadow:6px 0 24px rgba(16,24,40,.04); padding:var(--space-5) var(--space-4); z-index:10; }
+    body.nav-collapsed .section-nav { width:64px; padding:var(--space-4) var(--space-2); }
+    body.nav-collapsed .nav-brand-line-1, body.nav-collapsed .nav-brand-line-2, body.nav-collapsed .nav-title, body.nav-collapsed .nav-label { display:none; }
+    body.nav-collapsed .nav-brand { min-height:40px; padding-bottom:var(--space-3); }
+    .nav-icon { align-items:center; display:inline-flex; flex:0 0 24px; height:24px; justify-content:center; line-height:1; width:24px; }
+    .nav-icon svg { display:block; height:20px; stroke-width:2.2; width:20px; }
+    .section-nav button { align-items:center; display:flex; gap:var(--space-2); }
+    body.nav-collapsed .section-nav button { border-left-width:0; justify-content:center; padding:var(--space-3) var(--space-2); }
+    .nav-toggle { margin-top:auto; }
+    .nav-toggle .nav-icon { color:var(--color-primary); }
+    .nav-brand { border-bottom:1px solid var(--color-line); margin-bottom:var(--space-4); padding-bottom:var(--space-4); }
+    .nav-brand-line-1 { color:var(--color-primary); display:block; font-size:var(--font-size-2xl); font-weight:var(--font-weight-heavy); line-height:.95; letter-spacing:.02em; text-transform:uppercase; }
+    .nav-brand-line-2 { color:var(--color-ink); display:block; font-size:var(--font-size-xl); font-weight:var(--font-weight-heavy); line-height:1.05; }
+    .nav-title { color:var(--color-muted); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); margin-top:var(--space-4); text-transform:uppercase; }
+    .section-nav button { background:transparent; border:0; border-left:4px solid transparent; border-radius:12px; color:var(--color-muted); cursor:pointer; font-family:var(--font-family-base); font-size:var(--font-size-md); font-weight:var(--font-weight-bold); padding:var(--space-3); text-align:left; }
+    .section-nav button.active, .section-nav button:hover, .section-nav button:focus-visible { background:var(--color-primary-soft); border-left-color:var(--color-primary); color:var(--color-primary-dark); outline:none; }
+    .page { display:none; margin-bottom:0; }
+    .page.active { display:block; }
+    h2 { color:#101828; letter-spacing:0; margin-bottom:var(--space-5); }
+    h3 { color:#101828; letter-spacing:0; margin-bottom:var(--space-4); }
+    p { color:var(--color-muted); }
+    .section-intro { color:var(--color-muted); line-height:1.65; }
+    .panel, .metric, .notice, .map-panel, .category-metric, .progress-card, .detail-box { border-color:rgba(8,73,167,.08); border-radius:var(--card-radius); box-shadow:var(--card-shadow); }
+    .panel { padding:var(--space-5); }
+    .metric { background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%); }
+    .metric-value, .category-metric-value, .progress-value, .hist-count { color:var(--color-primary); }
+    .metric-title, .category-metric-title { color:#344054; }
+    .metric-note, .metric-meta, .comparison-rank { color:var(--color-muted); }
+    .bar-track, .progress-track { background:#f0f5fb; border-color:#dce8f5; }
+    .bar-fill, .progress-fill, .hist-bar { background:linear-gradient(90deg,var(--color-primary) 0%,#1d64c8 100%); }
+    .status-badge, .chip-badge { border-radius:999px; }
+    .status-badge.yes { background:var(--color-primary-soft); border-color:var(--color-primary-line); color:var(--color-primary-dark); }
+    .status-badge.no { background:#f7f8fa; border-color:#e7eaee; color:#5f6b7a; }
+    .category h3 { border-top-color:#e8eef5; margin-top:var(--space-6); }
+    .scroll { border-color:rgba(8,73,167,.10); border-radius:12px; }
+    select { border-color:#d8e4f2; border-radius:12px; box-shadow:0 1px 2px rgba(16,24,40,.04); }
+    .kpis { grid-template-columns:repeat(5,minmax(130px,1fr)); }
+    .metric-note:empty { display:none; }
+    .metric-title { min-height:auto; color:var(--color-ink); }
+    .metric-meta { color:var(--color-muted); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); line-height:1.35; margin-top:var(--space-2); }
+    .wide-narrow { grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr); }
+    .overview-charts { grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr); align-items:stretch; }
+    .overview-charts .panel { display:flex; flex-direction:column; height:380px; min-height:0; }
+    .overview-charts .compact-chart { columns:1; }
+    .overview-charts #rank-chart { column-count:auto; column-width:auto; columns:auto; flex:1; min-height:0; overflow-x:hidden; overflow-y:auto; padding-right:var(--space-2); scrollbar-gutter:stable; }
+    .overview-charts #rank-chart .bar-row { grid-template-columns:minmax(130px,210px) minmax(80px,1fr) 64px; }
+    .overview-charts #rank-chart .bar-row { break-inside:auto; }
+    .overview-charts #rank-chart .bar-label { overflow-wrap:anywhere; }
+    .compact-chart { columns:1; }
+    .bar-row { grid-template-columns:minmax(120px,210px) minmax(90px,1fr) 70px; }
+    .hist { width:100%; min-width:0; }
+    .hist-bin { min-width:0; }
+    .map-fallback { display:none; }
+    .profile-head { grid-template-columns:minmax(320px,.95fr) minmax(420px,1.05fr); gap:var(--space-5); align-items:stretch; }
+    .explorer-analysis { grid-template-columns:1fr; }
+    .benchmark-panel { display:none; }
+    .edu-pies { display:grid; gap:var(--space-4); grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); padding:var(--space-4); }
+    .mini-pie-card { border:1px solid var(--color-line); padding:var(--space-3); }
+    .mini-pie { width:92px; height:92px; border-radius:50%; background:conic-gradient(var(--color-primary) 0deg, var(--color-primary) 1deg, var(--color-soft) 1deg); margin-bottom:var(--space-2); }
+    .mini-pie-label { font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }
+    .mini-pie-value { color:var(--color-muted); font-size:var(--font-size-xs); }
+    .category-dashboard { display:grid; gap:var(--space-4); padding:0; }
+    .category-dashboard h4 { margin:0; color:var(--color-ink); font-size:var(--font-size-md); font-weight:var(--font-weight-heavy); }
+    .category-blurb { margin-bottom:0; }
+    .category-metrics { display:grid; gap:var(--space-3); grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
+    .category-metrics.compact-metrics { grid-template-columns:repeat(auto-fit,minmax(140px,180px)); justify-content:start; }
+    .category-metric { background:var(--color-surface); border:1px solid var(--color-line); padding:var(--space-3); min-width:0; }
+    .category-metric-title { font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); color:var(--color-muted); }
+    .category-metric-value { color:var(--color-primary); font-size:var(--font-size-xl); font-weight:var(--font-weight-heavy); line-height:1.1; margin-top:var(--space-1); overflow-wrap:anywhere; }
+    .comparison-stat { color:var(--color-muted); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); line-height:1.35; margin-top:var(--space-2); }
+    .badge-grid { display:grid; gap:var(--space-2); grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
+    .indicator-card { align-items:center; display:flex; gap:var(--space-2); justify-content:space-between; min-width:0; padding:var(--space-1) 0; }
+    .indicator-title { font-size:var(--font-size-sm); color:var(--color-ink); font-weight:var(--font-weight-bold); margin:0; }
+    .status-badge, .chip-badge { display:inline-flex; align-items:center; gap:var(--space-1); border:1px solid var(--color-line); padding:var(--space-1) var(--space-2); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); background:var(--color-soft); color:var(--color-ink); white-space:nowrap; }
+    .status-badge.yes { background:#eef6ff; border-color:#bfd7f2; color:var(--color-primary); }
+    .status-badge.no { background:#f4f4f4; color:var(--color-muted); }
+    .checklist { display:grid; gap:var(--space-2); grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
+    .check-row { display:flex; gap:var(--space-2); align-items:center; justify-content:space-between; padding:var(--space-1) 0; min-width:0; }
+    .check-label { font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }
+    .progress-grid { display:grid; gap:var(--space-3); grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+    .progress-card { border:1px solid var(--color-line); padding:var(--space-3); background:var(--color-surface); }
+    .progress-title { font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }
+    .progress-value { color:var(--color-primary); font-size:var(--font-size-lg); font-weight:var(--font-weight-heavy); margin:var(--space-2) 0; }
+    .progress-track { height:12px; background:var(--color-soft); border:1px solid var(--color-line); overflow:hidden; }
+    .progress-fill { height:100%; background:var(--color-primary); }
+    .detail-box { border:1px solid var(--color-line); background:var(--color-surface); }
+    .detail-box summary { border:0; border-left:0; box-shadow:none; padding:var(--space-3); }
+    .detail-box .detail-content { padding:0 var(--space-3) var(--space-3); color:var(--color-muted); font-size:var(--font-size-sm); }
+    @media (max-width: 850px) {
+      body { overflow:auto; }
+      main { margin:0; height:auto; overflow:visible; }
+      body.nav-collapsed main { margin-left:0; }
+      .dashboard-content { height:auto; overflow:visible; padding:var(--space-4); }
+      .section-nav { position:static; width:auto; height:auto; border-right:0; border-bottom:1px solid var(--color-line); }
+      body.nav-collapsed .section-nav { display:grid; width:auto; padding:var(--space-4); }
+      body.nav-collapsed .nav-brand-line-1, body.nav-collapsed .nav-brand-line-2, body.nav-collapsed .nav-title, body.nav-collapsed .nav-label { display:none; }
+      .nav-brand-line-1 { font-size:var(--font-size-xl); }
+      .nav-brand-line-2 { font-size:var(--font-size-lg); }
+      .kpis { grid-template-columns:repeat(5,minmax(110px,1fr)); }
+      .wide-narrow, .overview-charts, .profile-head, .donut-wrap, .explorer-analysis { grid-template-columns:1fr; }
+      .selected-kpis { height:auto; grid-template-columns:repeat(2,minmax(140px,1fr)); }
+      .overview-charts .panel { height:auto; min-height:0; }
+      .overview-charts #rank-chart { max-height:none; overflow:visible; padding-right:0; }
+      .overview-charts .compact-chart { columns:1; }
+      .bar-row { grid-template-columns:104px minmax(76px,1fr) 58px; gap:var(--space-2); }
+      .bar-label, .bar-value { font-size:var(--font-size-xs); }
+      .hist-label { font-size:10px; }
+    }
+    @media (max-width: 520px) {
+      .kpis { grid-template-columns:1fr; }
+      .overview-charts .panel { min-height:0; }
+      .overview-charts .compact-chart { columns:1; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <div class="dashboard-shell">
+    <nav class="section-nav" id="section-nav" aria-label="Dashboard sections">
+      <div class="nav-brand">
+        <span class="nav-brand-line-1">Long Island</span>
+        <span class="nav-brand-line-2">Clean Energy Hub</span>
+        <div class="nav-title">Town Readiness Assessment</div>
+      </div>
+      <button class="active" data-view="overview" type="button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10.5V20h13v-9.5"></path><path d="M9.5 20v-5h5v5"></path></svg></span><span class="nav-label">Overview</span></button>
+      <button data-view="explorer" type="button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"></circle><path d="m16 16 4 4"></path></svg></span><span class="nav-label">Municipality Explorer</span></button>
+      <button data-view="methodology" type="button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 10v7"></path><path d="M12 7h.01"></path></svg></span><span class="nav-label">Methodology</span></button>
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-controls="section-nav" aria-expanded="true" aria-label="Collapse navigation"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></span><span class="nav-label">Collapse menu</span></button>
+    </nav>
+    <div class="dashboard-content">
+      <!-- Looker Studio Page 1: Long Island Overview -->
+      <section id="overview" class="page active">
+        <h2>Long Island Overview</h2>
+        <p class="section-intro overview-intro">Compare clean energy readiness indicators across the assessed Long Island municipalities, including planning status, NYSERDA Clean Energy Communities progress, renewable energy goals, EV charging infrastructure, and workforce program availability.</p>
+        <p class="section-intro overview-intro">Data shown in this dashboard is based on municipal assessment responses and the most recent publicly available information identified during the review process. Some values may be approximate, unavailable, or subject to change as local programs and public data sources are updated.</p>
+        <p class="overview-subheading">Across <span class="accent-number">15</span> municipalities assessed...</p>
+        <div class="grid kpis" id="overview-kpis"></div>
+        <div class="grid wide-narrow overview-charts">
+          <div class="panel">
+            <h3>Municipality Ranking by NYSERDA Points</h3>
+            <p>NYSERDA points summarize progress recorded through the Clean Energy Communities program.</p>
+            <div id="rank-chart" class="compact-chart"></div>
+          </div>
+          <div class="panel">
+            <h3>Distribution of NYSERDA Points</h3>
+            <p>This chart shows how municipalities are distributed across NYSERDA point ranges.</p>
+            <div id="histogram"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Looker Studio Page 2: Municipality Explorer -->
+      <section id="explorer" class="page">
+        <h2>Municipality Explorer</h2>
+        <p class="section-intro">Select a municipality to view its clean energy readiness profile, NYSERDA points, climate planning indicators, renewable energy goals, EV charger count, and related benchmark information.</p>
+        <label for="municipality-select"><strong>Municipality selector</strong></label>
+        <select id="municipality-select" aria-label="Select municipality"></select>
+        <div class="profile-head">
+          <div class="map-panel" id="map-panel">
+            <iframe id="municipality-map" title="Selected municipality map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+          <div class="grid selected-kpis" id="selected-kpis"></div>
+        </div>
+        <div class="grid explorer-analysis">
+          <div class="panel">
+            <h3>NYSERDA Points Breakdown</h3>
+            <p>Only actual NYSERDA point fields from the assessment dataset are included in this chart.</p>
+            <div class="donut-wrap">
+              <div id="donut" class="donut" role="img" aria-label="NYSERDA points breakdown donut chart"></div>
+              <div id="donut-legend" class="legend"></div>
+            </div>
+            <div class="scroll nys-table-wrap"><table id="nys-points-table"></table></div>
+          </div>
+        </div>
+        <div class="section-block assessment-section">
+          <div id="category-sections"></div>
+        </div>
+        <div class="section-block">
+          <h3>Resources / Organizations</h3>
+          <p class="resource-empty">Resource and organization listings will be added after names and source details are reviewed for public display.</p>
+        </div>
+      </section>
+
+      <!-- Looker Studio Page 3: Methodology / Data Notes -->
+      <section id="methodology" class="page">
+        <h2>Methodology / Data Notes</h2>
+        <div class="panel">
+          <div class="method-section"><h3>Data Source</h3><p>This dashboard uses the Master Spreadsheet municipal assessment dataset, including assessment response fields for the Long Island municipalities currently included in the workbook.</p></div>
+          <div class="method-section"><h3>Standardization of Assessment Responses</h3><p>Response fields are shown using the standardized values available in the dataset. Public-facing labels are simplified from the spreadsheet field names so users can scan the information without needing to read raw column codes.</p></div>
+          <div class="method-section"><h3>Missing Values</h3><p>Blank, unavailable, or not applicable responses are retained where present so reviewers can distinguish missing information from confirmed program activity.</p></div>
+          <div class="method-section"><h3>Limitations</h3><p>This pilot dashboard is intended for public review of structure, readability, and municipal comparison. It does not create artificial comparison metrics or formal readiness ratings, and it should not be interpreted as a recommendation or final municipal evaluation.</p></div>
+          <div class="method-section"><h3>Source Documentation</h3><p>A full source documentation spreadsheet will be linked here in a future version.</p></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+<script>
+const DATA = {"overview": {"totalMunicipalities": 15, "averageNYSERDAPoints": 1240, "climateSmartParticipants": 14, "climateActionPlans": 8, "climateActionPlanFraction": "8/15", "climateActionPlanPercent": 53, "renewableEnergyGoals": 10, "renewableEnergyGoalFraction": "10/15", "renewableEnergyGoalPercent": 67, "publicEVChargers": 1082, "averagePublicEVChargers": 72.1, "informalPlanningYes": 4, "informalPlanningNo": 11, "informalPlanningFraction": "4/15", "informalPlanningPercent": 27, "cleanEnergyWorkforcePrograms": 10, "cleanEnergyWorkforceProgramFraction": "10/15", "cleanEnergyWorkforceProgramPercent": 67, "youthEmploymentPrograms": 10, "youthEmploymentProgramFraction": "10/15", "youthEmploymentProgramPercent": 67}, "records": [{"Municipality": "Babylon", "NYSERDA_1A_Benchmarking": 0, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 700, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 200, "NYSERDA_1J_CSC_Certification": 600, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 0, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 100, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "Participating", "NYSERDA_1R_StarDesignation": "2 star", "CSC_2_Designation": "bronze", "CLIMATE_3A_FormalPlan": "No", "CLIMATE_3B_InformalPlan": "No", "CLIMATE_3C_PlanUpdated": "N/A", "CLIMATE_3E_EnvironmentalJustice": "Yes", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "No", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "Yes", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 0, "SCHOOL_4B_CollegeCleanEnergy": 0, "SCHOOL_4C_CollegeEnvCourses": 0, "SCHOOL_4D_TotalColleges": 0, "SCHOOL_4E_HS_EnvPrograms": 7, "SCHOOL_4F_HS_CleanEnergy": 7, "SCHOOL_4H_TotalHighSchools": 8, "GOV_5A_ClimateCommittee": "Yes", "GOV_5B_EnvironmentalCommittee": "Yes", "GOV_5C_SustainabilityOffice": "Yes", "GOV_5D_SustainabilityCoordinator": "Yes", "ENERGY_6A_GHGInventory": "Yes", "ENERGY_6B_GovOnlyInventory": "Community", "ENERGY_6C_Benchmarking": "No", "ENERGY_6D_EnergyCode": "Both", "ENERGY_6E_EfficiencyIncentives": "Yes", "ENERGY_6I_LargeSolar": "Yes", "ENERGY_6J_WindProjects": "No", "ENERGY_6L_PACE": "Yes", "ENERGY_6N_RenewableGoal": "No", "ENERGY_6O_RenewableIncentives": "Yes", "BUILD_7A_GovLEED": 0, "BUILD_7C_TotalLEED": 1, "BUILD_7E_LEEDPolicy": "Both", "BUILD_7F_LEEDIncentives": "Yes", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 10, "EV_8D_TotalEVs": 177935, "EV_8F_PublicChargers": 20, "EV_8G_EVAdoptionGoal": "No goal", "EV_8H_EVIncentives": "No", "EV_8I_TransitLines": 6, "EV_8J_TransitUsers": 0.078, "GREEN_9A_SustainabilityCommittee": "Yes", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "Yes", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 3, "GREEN_9H_ClimateEvents": "Yes", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 0, "WORK_11A_TradeUnions": 29, "WORK_11H_CommunityProjects": 30, "WORK_11I_HousingShelters": 31, "WORK_11K_WorkforceIncentives": 1, "WORK_11L_YouthEmploymentPrograms": 10, "WORK_11M_WorkforceProgram": "Yes", "WORK_11N_WorkforcePlan": "Yes", "HOUSING_12B_RemediationBusinesses": 13, "HOUSING_12C_HomesNeedRoofRepair": "N/A", "HOUSING_12E_FoodPantries": 16, "HOUSING_12F_LegalRentals": 1166, "HOUSING_12G_EBTAcceptingMarkets": 119, "HOUSING_12H_RepairCafes": "Yes", "HOUSING_12I_HousingEvents": "Yes", "HOUSING_12J_Section8Homes": 881, "NYSERDA_Total": 1800, "Climate Smart Community Status": "bronze", "Climate Action Plan Status": "No", "Renewable Energy Goal Status": "No", "Public EV Chargers": 20, "Public Transportation Lines": 6, "Environmental, Climate, and Sustainability NGO Count": 3}, {"Municipality": "Brookhaven", "NYSERDA_1A_Benchmarking": 0, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 700, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 0, "NYSERDA_1J_CSC_Certification": 0, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 100, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "Participating", "NYSERDA_1R_StarDesignation": "No stars", "CSC_2_Designation": "registered", "CLIMATE_3A_FormalPlan": "No", "CLIMATE_3B_InformalPlan": "Yes", "CLIMATE_3C_PlanUpdated": "N/A", "CLIMATE_3E_EnvironmentalJustice": "Yes", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "No", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "No", "CLIMATE_3K_EVCode": "No", "SCHOOL_4A_CollegeEnvPrograms": 2, "SCHOOL_4B_CollegeCleanEnergy": 2, "SCHOOL_4C_CollegeEnvCourses": 2, "SCHOOL_4D_TotalColleges": 3, "SCHOOL_4E_HS_EnvPrograms": 6, "SCHOOL_4F_HS_CleanEnergy": 1, "SCHOOL_4H_TotalHighSchools": 12, "GOV_5A_ClimateCommittee": "No", "GOV_5B_EnvironmentalCommittee": "No", "GOV_5C_SustainabilityOffice": "Yes", "GOV_5D_SustainabilityCoordinator": "No", "ENERGY_6A_GHGInventory": "Yes", "ENERGY_6B_GovOnlyInventory": "Community", "ENERGY_6C_Benchmarking": "No", "ENERGY_6D_EnergyCode": "Both", "ENERGY_6E_EfficiencyIncentives": "Yes", "ENERGY_6I_LargeSolar": "Yes", "ENERGY_6J_WindProjects": "Yes", "ENERGY_6L_PACE": "No", "ENERGY_6N_RenewableGoal": "Government Only", "ENERGY_6O_RenewableIncentives": "Yes", "BUILD_7A_GovLEED": 17, "BUILD_7C_TotalLEED": 11, "BUILD_7E_LEEDPolicy": "No goal", "BUILD_7F_LEEDIncentives": "Yes", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 10, "EV_8D_TotalEVs": 9865, "EV_8F_PublicChargers": 121, "EV_8G_EVAdoptionGoal": "Both", "EV_8H_EVIncentives": "No", "EV_8I_TransitLines": 53, "EV_8J_TransitUsers": 0.021, "GREEN_9A_SustainabilityCommittee": "No", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "Yes", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 4, "GREEN_9H_ClimateEvents": "Yes", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 6, "WORK_11A_TradeUnions": 9, "WORK_11H_CommunityProjects": 5, "WORK_11I_HousingShelters": 4, "WORK_11K_WorkforceIncentives": 3, "WORK_11L_YouthEmploymentPrograms": 2, "WORK_11M_WorkforceProgram": "Yes", "WORK_11N_WorkforcePlan": "No", "HOUSING_12B_RemediationBusinesses": 4, "HOUSING_12C_HomesNeedRoofRepair": 132, "HOUSING_12E_FoodPantries": 281, "HOUSING_12F_LegalRentals": 3934, "HOUSING_12G_EBTAcceptingMarkets": 111, "HOUSING_12H_RepairCafes": "Yes", "HOUSING_12I_HousingEvents": "Yes", "HOUSING_12J_Section8Homes": 873, "NYSERDA_Total": 1000, "Climate Smart Community Status": "registered", "Climate Action Plan Status": "No", "Renewable Energy Goal Status": "Government Only", "Public EV Chargers": 121, "Public Transportation Lines": 53, "Environmental, Climate, and Sustainability NGO Count": 4}, {"Municipality": "City of Glen Cove", "NYSERDA_1A_Benchmarking": 100, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 900, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 200, "NYSERDA_1J_CSC_Certification": 0, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 100, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "Participating", "NYSERDA_1R_StarDesignation": "1 star", "CSC_2_Designation": "registered", "CLIMATE_3A_FormalPlan": "Yes", "CLIMATE_3B_InformalPlan": "No", "CLIMATE_3C_PlanUpdated": "No", "CLIMATE_3E_EnvironmentalJustice": "Yes", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "Yes", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "Yes", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 0, "SCHOOL_4B_CollegeCleanEnergy": 0, "SCHOOL_4C_CollegeEnvCourses": 0, "SCHOOL_4D_TotalColleges": 1, "SCHOOL_4E_HS_EnvPrograms": 1, "SCHOOL_4F_HS_CleanEnergy": 1, "SCHOOL_4H_TotalHighSchools": 1, "GOV_5A_ClimateCommittee": "No", "GOV_5B_EnvironmentalCommittee": "No", "GOV_5C_SustainabilityOffice": "No", "GOV_5D_SustainabilityCoordinator": "No", "ENERGY_6A_GHGInventory": "Yes", "ENERGY_6B_GovOnlyInventory": "Community", "ENERGY_6C_Benchmarking": "Yes", "ENERGY_6D_EnergyCode": "Community", "ENERGY_6E_EfficiencyIncentives": "Yes", "ENERGY_6I_LargeSolar": "No", "ENERGY_6J_WindProjects": "No", "ENERGY_6L_PACE": "Yes", "ENERGY_6N_RenewableGoal": "Yes", "ENERGY_6O_RenewableIncentives": "Yes", "BUILD_7A_GovLEED": "N/A", "BUILD_7C_TotalLEED": 2, "BUILD_7E_LEEDPolicy": "No goal", "BUILD_7F_LEEDIncentives": "No", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 2, "EV_8D_TotalEVs": 643, "EV_8F_PublicChargers": 28, "EV_8G_EVAdoptionGoal": "Both", "EV_8H_EVIncentives": "No", "EV_8I_TransitLines": 4, "EV_8J_TransitUsers": 0.0941, "GREEN_9A_SustainabilityCommittee": "Yes", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "Yes", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 5, "GREEN_9H_ClimateEvents": "Yes", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 6, "WORK_11A_TradeUnions": 1, "WORK_11H_CommunityProjects": 12, "WORK_11I_HousingShelters": 1, "WORK_11K_WorkforceIncentives": 3, "WORK_11L_YouthEmploymentPrograms": 1, "WORK_11M_WorkforceProgram": "Yes", "WORK_11N_WorkforcePlan": "Yes", "HOUSING_12B_RemediationBusinesses": 8, "HOUSING_12C_HomesNeedRoofRepair": "N/A", "HOUSING_12E_FoodPantries": 1, "HOUSING_12F_LegalRentals": 4898, "HOUSING_12G_EBTAcceptingMarkets": 19, "HOUSING_12H_RepairCafes": "No", "HOUSING_12I_HousingEvents": "Yes", "HOUSING_12J_Section8Homes": 282, "NYSERDA_Total": 1500, "Climate Smart Community Status": "registered", "Climate Action Plan Status": "Yes", "Renewable Energy Goal Status": "Yes", "Public EV Chargers": 28, "Public Transportation Lines": 4, "Environmental, Climate, and Sustainability NGO Count": 5}, {"Municipality": "City of Long Beach", "NYSERDA_1A_Benchmarking": 300, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 700, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 0, "NYSERDA_1J_CSC_Certification": 600, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 0, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "designated", "NYSERDA_1R_StarDesignation": "2 star", "CSC_2_Designation": "bronze", "CLIMATE_3A_FormalPlan": "Yes", "CLIMATE_3B_InformalPlan": "No", "CLIMATE_3C_PlanUpdated": "No", "CLIMATE_3E_EnvironmentalJustice": "Yes", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "Yes", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "Yes", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 0, "SCHOOL_4B_CollegeCleanEnergy": 0, "SCHOOL_4C_CollegeEnvCourses": 0, "SCHOOL_4D_TotalColleges": 1, "SCHOOL_4E_HS_EnvPrograms": 1, "SCHOOL_4F_HS_CleanEnergy": 1, "SCHOOL_4H_TotalHighSchools": 2, "GOV_5A_ClimateCommittee": "Yes", "GOV_5B_EnvironmentalCommittee": "Yes", "GOV_5C_SustainabilityOffice": "Yes", "GOV_5D_SustainabilityCoordinator": "Yes", "ENERGY_6A_GHGInventory": "Yes", "ENERGY_6B_GovOnlyInventory": "Community", "ENERGY_6C_Benchmarking": "Yes", "ENERGY_6D_EnergyCode": "Community", "ENERGY_6E_EfficiencyIncentives": "Yes", "ENERGY_6I_LargeSolar": "No", "ENERGY_6J_WindProjects": "Yes", "ENERGY_6L_PACE": "Yes", "ENERGY_6N_RenewableGoal": "Yes", "ENERGY_6O_RenewableIncentives": "Yes", "BUILD_7A_GovLEED": 1, "BUILD_7C_TotalLEED": 2, "BUILD_7E_LEEDPolicy": "No goal", "BUILD_7F_LEEDIncentives": "Yes", "BUILD_7I_HeatPumpIncentives": "Yes", "EV_8C_GovChargers": 119, "EV_8D_TotalEVs": 543, "EV_8F_PublicChargers": 4, "EV_8G_EVAdoptionGoal": "Both", "EV_8H_EVIncentives": "Yes", "EV_8I_TransitLines": 6, "EV_8J_TransitUsers": 0.15, "GREEN_9A_SustainabilityCommittee": "Yes", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "Yes", "GREEN_9E_GreenIncentives": "No", "GREEN_9F_NGOCount": 4, "GREEN_9H_ClimateEvents": "Yes", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 4, "WORK_11A_TradeUnions": 4, "WORK_11H_CommunityProjects": 10, "WORK_11I_HousingShelters": 5, "WORK_11K_WorkforceIncentives": "N/A", "WORK_11L_YouthEmploymentPrograms": 6, "WORK_11M_WorkforceProgram": "Yes", "WORK_11N_WorkforcePlan": "Yes", "HOUSING_12B_RemediationBusinesses": 1, "HOUSING_12C_HomesNeedRoofRepair": 12000, "HOUSING_12E_FoodPantries": 1, "HOUSING_12F_LegalRentals": 11000, "HOUSING_12G_EBTAcceptingMarkets": 31, "HOUSING_12H_RepairCafes": "Yes", "HOUSING_12I_HousingEvents": "Yes", "HOUSING_12J_Section8Homes": 400, "NYSERDA_Total": 1800, "Climate Smart Community Status": "bronze", "Climate Action Plan Status": "Yes", "Renewable Energy Goal Status": "Yes", "Public EV Chargers": 4, "Public Transportation Lines": 6, "Environmental, Climate, and Sustainability NGO Count": 4}, {"Municipality": "East Hampton", "NYSERDA_1A_Benchmarking": 300, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 900, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 500, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 200, "NYSERDA_1J_CSC_Certification": 600, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 100, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "designated", "NYSERDA_1R_StarDesignation": "4 stars", "CSC_2_Designation": "bronze", "CLIMATE_3A_FormalPlan": "Yes", "CLIMATE_3B_InformalPlan": "No", "CLIMATE_3C_PlanUpdated": "No", "CLIMATE_3E_EnvironmentalJustice": "No", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "Yes", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "No", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 0, "SCHOOL_4B_CollegeCleanEnergy": 0, "SCHOOL_4C_CollegeEnvCourses": 0, "SCHOOL_4D_TotalColleges": 0, "SCHOOL_4E_HS_EnvPrograms": 2, "SCHOOL_4F_HS_CleanEnergy": 2, "SCHOOL_4H_TotalHighSchools": 2, "GOV_5A_ClimateCommittee": "Yes", "GOV_5B_EnvironmentalCommittee": "Yes", "GOV_5C_SustainabilityOffice": "Yes", "GOV_5D_SustainabilityCoordinator": "No", "ENERGY_6A_GHGInventory": "Yes", "ENERGY_6B_GovOnlyInventory": "Community", "ENERGY_6C_Benchmarking": "Yes", "ENERGY_6D_EnergyCode": "Both", "ENERGY_6E_EfficiencyIncentives": "Yes", "ENERGY_6I_LargeSolar": "Yes", "ENERGY_6J_WindProjects": "Yes", "ENERGY_6L_PACE": "No", "ENERGY_6N_RenewableGoal": "Yes", "ENERGY_6O_RenewableIncentives": "Yes", "BUILD_7A_GovLEED": "N/A", "BUILD_7C_TotalLEED": 1, "BUILD_7E_LEEDPolicy": "No goal", "BUILD_7F_LEEDIncentives": "No", "BUILD_7I_HeatPumpIncentives": "Yes", "EV_8C_GovChargers": 22, "EV_8D_TotalEVs": 1070, "EV_8F_PublicChargers": 58, "EV_8G_EVAdoptionGoal": "Government Only", "EV_8H_EVIncentives": "No", "EV_8I_TransitLines": 4, "EV_8J_TransitUsers": 0.04, "GREEN_9A_SustainabilityCommittee": "Yes", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "Yes", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 18, "GREEN_9H_ClimateEvents": "Yes", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 4, "WORK_11A_TradeUnions": 5, "WORK_11H_CommunityProjects": 98, "WORK_11I_HousingShelters": 1, "WORK_11K_WorkforceIncentives": 2, "WORK_11L_YouthEmploymentPrograms": 0, "WORK_11M_WorkforceProgram": "No", "WORK_11N_WorkforcePlan": "Yes", "HOUSING_12B_RemediationBusinesses": 0, "HOUSING_12C_HomesNeedRoofRepair": "N/A", "HOUSING_12E_FoodPantries": 4, "HOUSING_12F_LegalRentals": 168, "HOUSING_12G_EBTAcceptingMarkets": 9, "HOUSING_12H_RepairCafes": "No", "HOUSING_12I_HousingEvents": "Yes", "HOUSING_12J_Section8Homes": 580, "NYSERDA_Total": 2800, "Climate Smart Community Status": "bronze", "Climate Action Plan Status": "Yes", "Renewable Energy Goal Status": "Yes", "Public EV Chargers": 58, "Public Transportation Lines": 4, "Environmental, Climate, and Sustainability NGO Count": 18}, {"Municipality": "Hempstead", "NYSERDA_1A_Benchmarking": 0, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 700, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 0, "NYSERDA_1J_CSC_Certification": 0, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 100, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "not participating", "NYSERDA_1R_StarDesignation": "No stars", "CSC_2_Designation": "registered", "CLIMATE_3A_FormalPlan": "Yes", "CLIMATE_3B_InformalPlan": "No", "CLIMATE_3C_PlanUpdated": "No", "CLIMATE_3E_EnvironmentalJustice": "No", "CLIMATE_3G_EnergyPlan": "No", "CLIMATE_3H_CodeClimate": "No", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "Yes", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 2, "SCHOOL_4B_CollegeCleanEnergy": 1, "SCHOOL_4C_CollegeEnvCourses": 1, "SCHOOL_4D_TotalColleges": 2, "SCHOOL_4E_HS_EnvPrograms": 2, "SCHOOL_4F_HS_CleanEnergy": 3, "SCHOOL_4H_TotalHighSchools": 7, "GOV_5A_ClimateCommittee": "No", "GOV_5B_EnvironmentalCommittee": "No", "GOV_5C_SustainabilityOffice": "Yes", "GOV_5D_SustainabilityCoordinator": "No", "ENERGY_6A_GHGInventory": "Yes", "ENERGY_6B_GovOnlyInventory": "Goverment operations", "ENERGY_6C_Benchmarking": "No", "ENERGY_6D_EnergyCode": "Community", "ENERGY_6E_EfficiencyIncentives": "No", "ENERGY_6I_LargeSolar": "Yes", "ENERGY_6J_WindProjects": "Yes", "ENERGY_6L_PACE": "No", "ENERGY_6N_RenewableGoal": "Government Only", "ENERGY_6O_RenewableIncentives": "No", "BUILD_7A_GovLEED": 5, "BUILD_7C_TotalLEED": 5, "BUILD_7E_LEEDPolicy": "No goal", "BUILD_7F_LEEDIncentives": "No", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 4, "EV_8D_TotalEVs": 14481, "EV_8F_PublicChargers": 200, "EV_8G_EVAdoptionGoal": "No goal", "EV_8H_EVIncentives": "No", "EV_8I_TransitLines": 5, "EV_8J_TransitUsers": 0.19, "GREEN_9A_SustainabilityCommittee": "No", "GREEN_9B_SustainabilityPrograms": "No", "GREEN_9C_GreenJobsPrograms": "No", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 14, "GREEN_9H_ClimateEvents": "Yes", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 6, "WORK_11A_TradeUnions": 0, "WORK_11H_CommunityProjects": 4, "WORK_11I_HousingShelters": 5, "WORK_11K_WorkforceIncentives": 2, "WORK_11L_YouthEmploymentPrograms": 5, "WORK_11M_WorkforceProgram": "Yes", "WORK_11N_WorkforcePlan": "No", "HOUSING_12B_RemediationBusinesses": 21, "HOUSING_12C_HomesNeedRoofRepair": "N/A", "HOUSING_12E_FoodPantries": 42, "HOUSING_12F_LegalRentals": "N/A", "HOUSING_12G_EBTAcceptingMarkets": 402, "HOUSING_12H_RepairCafes": "Yes", "HOUSING_12I_HousingEvents": "Yes", "HOUSING_12J_Section8Homes": 475, "NYSERDA_Total": 1000, "Climate Smart Community Status": "registered", "Climate Action Plan Status": "Yes", "Renewable Energy Goal Status": "Government Only", "Public EV Chargers": 200, "Public Transportation Lines": 5, "Environmental, Climate, and Sustainability NGO Count": 14}, {"Municipality": "Huntington", "NYSERDA_1A_Benchmarking": 0, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 0, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 0, "NYSERDA_1J_CSC_Certification": 0, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 100, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "designated", "NYSERDA_1R_StarDesignation": "1 star", "CSC_2_Designation": "bronze", "CLIMATE_3A_FormalPlan": "Yes", "CLIMATE_3B_InformalPlan": "No", "CLIMATE_3C_PlanUpdated": "No", "CLIMATE_3E_EnvironmentalJustice": "No", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "Yes", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "Yes", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 0, "SCHOOL_4B_CollegeCleanEnergy": 0, "SCHOOL_4C_CollegeEnvCourses": 0, "SCHOOL_4D_TotalColleges": 2, "SCHOOL_4E_HS_EnvPrograms": 9, "SCHOOL_4F_HS_CleanEnergy": 9, "SCHOOL_4H_TotalHighSchools": 9, "GOV_5A_ClimateCommittee": "Yes", "GOV_5B_EnvironmentalCommittee": "Yes", "GOV_5C_SustainabilityOffice": "Yes", "GOV_5D_SustainabilityCoordinator": "No", "ENERGY_6A_GHGInventory": "Yes", "ENERGY_6B_GovOnlyInventory": "Community", "ENERGY_6C_Benchmarking": "No", "ENERGY_6D_EnergyCode": "Both", "ENERGY_6E_EfficiencyIncentives": "Yes", "ENERGY_6I_LargeSolar": "No", "ENERGY_6J_WindProjects": "No", "ENERGY_6L_PACE": "Yes", "ENERGY_6N_RenewableGoal": "Yes", "ENERGY_6O_RenewableIncentives": "Yes", "BUILD_7A_GovLEED": 1, "BUILD_7C_TotalLEED": 2, "BUILD_7E_LEEDPolicy": "Community", "BUILD_7F_LEEDIncentives": "Yes", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 5, "EV_8D_TotalEVs": 7284, "EV_8F_PublicChargers": 23, "EV_8G_EVAdoptionGoal": "Government Only", "EV_8H_EVIncentives": "Yes", "EV_8I_TransitLines": 5, "EV_8J_TransitUsers": 0.091, "GREEN_9A_SustainabilityCommittee": "Yes", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "Yes", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 4, "GREEN_9H_ClimateEvents": "Yes", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 4, "WORK_11A_TradeUnions": 5, "WORK_11H_CommunityProjects": 20, "WORK_11I_HousingShelters": 3, "WORK_11K_WorkforceIncentives": 2, "WORK_11L_YouthEmploymentPrograms": 0, "WORK_11M_WorkforceProgram": "Yes", "WORK_11N_WorkforcePlan": "Yes", "HOUSING_12B_RemediationBusinesses": 4, "HOUSING_12C_HomesNeedRoofRepair": "N/A", "HOUSING_12E_FoodPantries": 10, "HOUSING_12F_LegalRentals": 399, "HOUSING_12G_EBTAcceptingMarkets": 18, "HOUSING_12H_RepairCafes": 1, "HOUSING_12I_HousingEvents": "Yes", "HOUSING_12J_Section8Homes": 573, "NYSERDA_Total": 300, "Climate Smart Community Status": "bronze", "Climate Action Plan Status": "Yes", "Renewable Energy Goal Status": "Yes", "Public EV Chargers": 23, "Public Transportation Lines": 5, "Environmental, Climate, and Sustainability NGO Count": 4}, {"Municipality": "Islip", "NYSERDA_1A_Benchmarking": 100, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 0, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 200, "NYSERDA_1J_CSC_Certification": 0, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 100, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "designated", "NYSERDA_1R_StarDesignation": "1 star", "CSC_2_Designation": "registered", "CLIMATE_3A_FormalPlan": "No", "CLIMATE_3B_InformalPlan": "No", "CLIMATE_3C_PlanUpdated": "N/A", "CLIMATE_3E_EnvironmentalJustice": "No", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "Yes", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "No", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 0, "SCHOOL_4B_CollegeCleanEnergy": 1, "SCHOOL_4C_CollegeEnvCourses": 0, "SCHOOL_4D_TotalColleges": 3, "SCHOOL_4E_HS_EnvPrograms": 10, "SCHOOL_4F_HS_CleanEnergy": 7, "SCHOOL_4H_TotalHighSchools": 10, "GOV_5A_ClimateCommittee": "Yes", "GOV_5B_EnvironmentalCommittee": "Yes", "GOV_5C_SustainabilityOffice": "Yes", "GOV_5D_SustainabilityCoordinator": "Yes", "ENERGY_6A_GHGInventory": "No", "ENERGY_6B_GovOnlyInventory": "N/A", "ENERGY_6C_Benchmarking": "Yes", "ENERGY_6D_EnergyCode": "Community", "ENERGY_6E_EfficiencyIncentives": "No", "ENERGY_6I_LargeSolar": "Yes", "ENERGY_6J_WindProjects": "No", "ENERGY_6L_PACE": "Yes", "ENERGY_6N_RenewableGoal": "No goal", "ENERGY_6O_RenewableIncentives": "Yes", "BUILD_7A_GovLEED": 1, "BUILD_7C_TotalLEED": 5, "BUILD_7E_LEEDPolicy": "Community", "BUILD_7F_LEEDIncentives": "Yes", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 0, "EV_8D_TotalEVs": 5224, "EV_8F_PublicChargers": 112, "EV_8G_EVAdoptionGoal": "No goal", "EV_8H_EVIncentives": "No", "EV_8I_TransitLines": 10, "EV_8J_TransitUsers": 0.045, "GREEN_9A_SustainabilityCommittee": "No", "GREEN_9B_SustainabilityPrograms": "No", "GREEN_9C_GreenJobsPrograms": "No", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 4, "GREEN_9H_ClimateEvents": "Yes", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 4, "WORK_11A_TradeUnions": 9, "WORK_11H_CommunityProjects": 5, "WORK_11I_HousingShelters": 6, "WORK_11K_WorkforceIncentives": 5, "WORK_11L_YouthEmploymentPrograms": 2, "WORK_11M_WorkforceProgram": "Yes", "WORK_11N_WorkforcePlan": "Yes", "HOUSING_12B_RemediationBusinesses": 26, "HOUSING_12C_HomesNeedRoofRepair": "N/A", "HOUSING_12E_FoodPantries": 55, "HOUSING_12F_LegalRentals": 21735, "HOUSING_12G_EBTAcceptingMarkets": 111, "HOUSING_12H_RepairCafes": "No", "HOUSING_12I_HousingEvents": "Yes", "HOUSING_12J_Section8Homes": 352, "NYSERDA_Total": 600, "Climate Smart Community Status": "registered", "Climate Action Plan Status": "No", "Renewable Energy Goal Status": "No goal", "Public EV Chargers": 112, "Public Transportation Lines": 10, "Environmental, Climate, and Sustainability NGO Count": 4}, {"Municipality": "North Hempstead", "NYSERDA_1A_Benchmarking": 300, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 0, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 200, "NYSERDA_1J_CSC_Certification": 0, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 100, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 0, "NYSERDA_1Q_Designation": "Participating", "NYSERDA_1R_StarDesignation": "1 star", "CSC_2_Designation": "bronze", "CLIMATE_3A_FormalPlan": "Yes", "CLIMATE_3B_InformalPlan": "No", "CLIMATE_3C_PlanUpdated": "No", "CLIMATE_3E_EnvironmentalJustice": "Yes", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "Yes", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "Yes", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 0, "SCHOOL_4B_CollegeCleanEnergy": 0, "SCHOOL_4C_CollegeEnvCourses": 0, "SCHOOL_4D_TotalColleges": 1, "SCHOOL_4E_HS_EnvPrograms": 6, "SCHOOL_4F_HS_CleanEnergy": 4, "SCHOOL_4H_TotalHighSchools": 7, "GOV_5A_ClimateCommittee": "Yes", "GOV_5B_EnvironmentalCommittee": "No", "GOV_5C_SustainabilityOffice": "Yes", "GOV_5D_SustainabilityCoordinator": "Yes", "ENERGY_6A_GHGInventory": "Yes", "ENERGY_6B_GovOnlyInventory": "Community", "ENERGY_6C_Benchmarking": "Yes", "ENERGY_6D_EnergyCode": "Both", "ENERGY_6E_EfficiencyIncentives": "Yes", "ENERGY_6I_LargeSolar": "Yes", "ENERGY_6J_WindProjects": "No", "ENERGY_6L_PACE": "Yes", "ENERGY_6N_RenewableGoal": "Yes", "ENERGY_6O_RenewableIncentives": "Yes", "BUILD_7A_GovLEED": 1, "BUILD_7C_TotalLEED": 1, "BUILD_7E_LEEDPolicy": "No goal", "BUILD_7F_LEEDIncentives": "No", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 8, "EV_8D_TotalEVs": 10517, "EV_8F_PublicChargers": 84, "EV_8G_EVAdoptionGoal": "Community", "EV_8H_EVIncentives": "No", "EV_8I_TransitLines": 41, "EV_8J_TransitUsers": 0.15, "GREEN_9A_SustainabilityCommittee": "Yes", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "Yes", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 6, "GREEN_9H_ClimateEvents": "No", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 6, "WORK_11A_TradeUnions": 3, "WORK_11H_CommunityProjects": 104, "WORK_11I_HousingShelters": 7, "WORK_11K_WorkforceIncentives": 0, "WORK_11L_YouthEmploymentPrograms": 10, "WORK_11M_WorkforceProgram": "Yes", "WORK_11N_WorkforcePlan": "No", "HOUSING_12B_RemediationBusinesses": "N/A", "HOUSING_12C_HomesNeedRoofRepair": 4000, "HOUSING_12E_FoodPantries": 3, "HOUSING_12F_LegalRentals": 18000, "HOUSING_12G_EBTAcceptingMarkets": 44, "HOUSING_12H_RepairCafes": "No", "HOUSING_12I_HousingEvents": "Yes", "HOUSING_12J_Section8Homes": 390, "NYSERDA_Total": 600, "Climate Smart Community Status": "bronze", "Climate Action Plan Status": "Yes", "Renewable Energy Goal Status": "Yes", "Public EV Chargers": 84, "Public Transportation Lines": 41, "Environmental, Climate, and Sustainability NGO Count": 6}, {"Municipality": "Oyster Bay", "NYSERDA_1A_Benchmarking": 0, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 0, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 0, "NYSERDA_1J_CSC_Certification": 0, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 0, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 0, "NYSERDA_1Q_Designation": "not participating", "NYSERDA_1R_StarDesignation": "No stars", "CSC_2_Designation": "registered", "CLIMATE_3A_FormalPlan": "No", "CLIMATE_3B_InformalPlan": "Yes", "CLIMATE_3C_PlanUpdated": "N/A", "CLIMATE_3E_EnvironmentalJustice": "No", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "Yes", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "Yes", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 3, "SCHOOL_4B_CollegeCleanEnergy": 2, "SCHOOL_4C_CollegeEnvCourses": 3, "SCHOOL_4D_TotalColleges": 6, "SCHOOL_4E_HS_EnvPrograms": 16, "SCHOOL_4F_HS_CleanEnergy": 16, "SCHOOL_4H_TotalHighSchools": 16, "GOV_5A_ClimateCommittee": "No", "GOV_5B_EnvironmentalCommittee": "No", "GOV_5C_SustainabilityOffice": "No", "GOV_5D_SustainabilityCoordinator": "No", "ENERGY_6A_GHGInventory": "No", "ENERGY_6B_GovOnlyInventory": "N/A", "ENERGY_6C_Benchmarking": "Yes", "ENERGY_6D_EnergyCode": "No goal", "ENERGY_6E_EfficiencyIncentives": "Yes", "ENERGY_6I_LargeSolar": "No", "ENERGY_6J_WindProjects": "No", "ENERGY_6L_PACE": "Yes", "ENERGY_6N_RenewableGoal": "No", "ENERGY_6O_RenewableIncentives": "No", "BUILD_7A_GovLEED": 0, "BUILD_7C_TotalLEED": 1, "BUILD_7E_LEEDPolicy": "No goal", "BUILD_7F_LEEDIncentives": "No", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 4, "EV_8D_TotalEVs": 10818, "EV_8F_PublicChargers": 34, "EV_8G_EVAdoptionGoal": "Both", "EV_8H_EVIncentives": "Yes", "EV_8I_TransitLines": 11, "EV_8J_TransitUsers": 0.1, "GREEN_9A_SustainabilityCommittee": "Yes", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "Yes", "GREEN_9E_GreenIncentives": "No", "GREEN_9F_NGOCount": 3, "GREEN_9H_ClimateEvents": "Yes", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 6, "WORK_11A_TradeUnions": 7, "WORK_11H_CommunityProjects": 11, "WORK_11I_HousingShelters": 0, "WORK_11K_WorkforceIncentives": 2, "WORK_11L_YouthEmploymentPrograms": 3, "WORK_11M_WorkforceProgram": "Yes", "WORK_11N_WorkforcePlan": "No", "HOUSING_12B_RemediationBusinesses": 10, "HOUSING_12C_HomesNeedRoofRepair": "N/A", "HOUSING_12E_FoodPantries": 2, "HOUSING_12F_LegalRentals": 76, "HOUSING_12G_EBTAcceptingMarkets": 14, "HOUSING_12H_RepairCafes": "No", "HOUSING_12I_HousingEvents": "Yes", "HOUSING_12J_Section8Homes": 911, "NYSERDA_Total": 0, "Climate Smart Community Status": "registered", "Climate Action Plan Status": "No", "Renewable Energy Goal Status": "No", "Public EV Chargers": 34, "Public Transportation Lines": 11, "Environmental, Climate, and Sustainability NGO Count": 3}, {"Municipality": "Riverhead", "NYSERDA_1A_Benchmarking": 300, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 900, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 200, "NYSERDA_1J_CSC_Certification": 0, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 0, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "designated", "NYSERDA_1R_StarDesignation": "1 star", "CSC_2_Designation": "bronze", "CLIMATE_3A_FormalPlan": "Yes", "CLIMATE_3B_InformalPlan": "No", "CLIMATE_3C_PlanUpdated": "No", "CLIMATE_3E_EnvironmentalJustice": "Yes", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "No", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "No", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 1, "SCHOOL_4B_CollegeCleanEnergy": 1, "SCHOOL_4C_CollegeEnvCourses": 1, "SCHOOL_4D_TotalColleges": 2, "SCHOOL_4E_HS_EnvPrograms": 2, "SCHOOL_4F_HS_CleanEnergy": 1, "SCHOOL_4H_TotalHighSchools": 2, "GOV_5A_ClimateCommittee": "Yes", "GOV_5B_EnvironmentalCommittee": "Yes", "GOV_5C_SustainabilityOffice": "No", "GOV_5D_SustainabilityCoordinator": "No", "ENERGY_6A_GHGInventory": "Yes", "ENERGY_6B_GovOnlyInventory": "Goverment operations", "ENERGY_6C_Benchmarking": "Yes", "ENERGY_6D_EnergyCode": "No goal", "ENERGY_6E_EfficiencyIncentives": "Yes", "ENERGY_6I_LargeSolar": "Yes", "ENERGY_6J_WindProjects": "No", "ENERGY_6L_PACE": "Yes", "ENERGY_6N_RenewableGoal": "Yes", "ENERGY_6O_RenewableIncentives": "Yes", "BUILD_7A_GovLEED": "N/A", "BUILD_7C_TotalLEED": 1, "BUILD_7E_LEEDPolicy": "Both", "BUILD_7F_LEEDIncentives": "No", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 14, "EV_8D_TotalEVs": 933, "EV_8F_PublicChargers": 90, "EV_8G_EVAdoptionGoal": "Both", "EV_8H_EVIncentives": "No", "EV_8I_TransitLines": 2, "EV_8J_TransitUsers": 360, "GREEN_9A_SustainabilityCommittee": "Yes", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "Yes", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 5, "GREEN_9H_ClimateEvents": "Yes", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 4, "WORK_11A_TradeUnions": 3, "WORK_11H_CommunityProjects": 8, "WORK_11I_HousingShelters": 5, "WORK_11K_WorkforceIncentives": 4, "WORK_11L_YouthEmploymentPrograms": 4, "WORK_11M_WorkforceProgram": "No", "WORK_11N_WorkforcePlan": "No", "HOUSING_12B_RemediationBusinesses": 2, "HOUSING_12C_HomesNeedRoofRepair": "N/A", "HOUSING_12E_FoodPantries": 14, "HOUSING_12F_LegalRentals": 1700, "HOUSING_12G_EBTAcceptingMarkets": 9, "HOUSING_12H_RepairCafes": "Yes", "HOUSING_12I_HousingEvents": 7, "HOUSING_12J_Section8Homes": 200, "NYSERDA_Total": 1600, "Climate Smart Community Status": "bronze", "Climate Action Plan Status": "Yes", "Renewable Energy Goal Status": "Yes", "Public EV Chargers": 90, "Public Transportation Lines": 2, "Environmental, Climate, and Sustainability NGO Count": 5}, {"Municipality": "Shelter Island", "NYSERDA_1A_Benchmarking": 100, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 0, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 0, "NYSERDA_1J_CSC_Certification": 0, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 100, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "designated", "NYSERDA_1R_StarDesignation": "1 star", "CSC_2_Designation": "Not participating", "CLIMATE_3A_FormalPlan": "No", "CLIMATE_3B_InformalPlan": "Yes", "CLIMATE_3C_PlanUpdated": "N/A", "CLIMATE_3E_EnvironmentalJustice": "Yes", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "Yes", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "No", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 0, "SCHOOL_4B_CollegeCleanEnergy": 0, "SCHOOL_4C_CollegeEnvCourses": 0, "SCHOOL_4D_TotalColleges": 0, "SCHOOL_4E_HS_EnvPrograms": 1, "SCHOOL_4F_HS_CleanEnergy": 1, "SCHOOL_4H_TotalHighSchools": 1, "GOV_5A_ClimateCommittee": "Yes", "GOV_5B_EnvironmentalCommittee": "No", "GOV_5C_SustainabilityOffice": "No", "GOV_5D_SustainabilityCoordinator": "No", "ENERGY_6A_GHGInventory": "Yes", "ENERGY_6B_GovOnlyInventory": "Community", "ENERGY_6C_Benchmarking": "Yes", "ENERGY_6D_EnergyCode": "Community", "ENERGY_6E_EfficiencyIncentives": "Yes", "ENERGY_6I_LargeSolar": "No", "ENERGY_6J_WindProjects": "No", "ENERGY_6L_PACE": "Yes", "ENERGY_6N_RenewableGoal": "No", "ENERGY_6O_RenewableIncentives": "Yes", "BUILD_7A_GovLEED": 0, "BUILD_7C_TotalLEED": 0, "BUILD_7E_LEEDPolicy": "No goal", "BUILD_7F_LEEDIncentives": "No", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 2, "EV_8D_TotalEVs": 123, "EV_8F_PublicChargers": 20, "EV_8G_EVAdoptionGoal": "Both", "EV_8H_EVIncentives": "No", "EV_8I_TransitLines": 0, "EV_8J_TransitUsers": 0, "GREEN_9A_SustainabilityCommittee": "No", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "No", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 1, "GREEN_9H_ClimateEvents": "Yes", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 4, "WORK_11A_TradeUnions": 22, "WORK_11H_CommunityProjects": 1, "WORK_11I_HousingShelters": 4, "WORK_11K_WorkforceIncentives": 7, "WORK_11L_YouthEmploymentPrograms": 0, "WORK_11M_WorkforceProgram": "No", "WORK_11N_WorkforcePlan": "No", "HOUSING_12B_RemediationBusinesses": 0, "HOUSING_12C_HomesNeedRoofRepair": "N/A", "HOUSING_12E_FoodPantries": 1, "HOUSING_12F_LegalRentals": 224, "HOUSING_12G_EBTAcceptingMarkets": 1, "HOUSING_12H_RepairCafes": "No", "HOUSING_12I_HousingEvents": 8, "HOUSING_12J_Section8Homes": 0, "NYSERDA_Total": 400, "Climate Smart Community Status": "Not participating", "Climate Action Plan Status": "No", "Renewable Energy Goal Status": "No", "Public EV Chargers": 20, "Public Transportation Lines": 0, "Environmental, Climate, and Sustainability NGO Count": 1}, {"Municipality": "Smithtown", "NYSERDA_1A_Benchmarking": 0, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 700, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 0, "NYSERDA_1J_CSC_Certification": 0, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 100, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "designated", "NYSERDA_1R_StarDesignation": "1 star", "CSC_2_Designation": "registered", "CLIMATE_3A_FormalPlan": "No", "CLIMATE_3B_InformalPlan": "No", "CLIMATE_3C_PlanUpdated": "N/A", "CLIMATE_3E_EnvironmentalJustice": "Yes", "CLIMATE_3G_EnergyPlan": "No", "CLIMATE_3H_CodeClimate": "Yes", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "Yes", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 0, "SCHOOL_4B_CollegeCleanEnergy": 0, "SCHOOL_4C_CollegeEnvCourses": 0, "SCHOOL_4D_TotalColleges": 0, "SCHOOL_4E_HS_EnvPrograms": 4, "SCHOOL_4F_HS_CleanEnergy": 4, "SCHOOL_4H_TotalHighSchools": 4, "GOV_5A_ClimateCommittee": "No", "GOV_5B_EnvironmentalCommittee": "Yes", "GOV_5C_SustainabilityOffice": "Yes", "GOV_5D_SustainabilityCoordinator": "No", "ENERGY_6A_GHGInventory": "No", "ENERGY_6B_GovOnlyInventory": "Community", "ENERGY_6C_Benchmarking": "Yes", "ENERGY_6D_EnergyCode": "No goal", "ENERGY_6E_EfficiencyIncentives": "Yes", "ENERGY_6I_LargeSolar": "Yes", "ENERGY_6J_WindProjects": "Yes", "ENERGY_6L_PACE": "Yes", "ENERGY_6N_RenewableGoal": "Yes", "ENERGY_6O_RenewableIncentives": "No", "BUILD_7A_GovLEED": 0, "BUILD_7C_TotalLEED": 1, "BUILD_7E_LEEDPolicy": "No goal", "BUILD_7F_LEEDIncentives": "No", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 2, "EV_8D_TotalEVs": 3781, "EV_8F_PublicChargers": 176, "EV_8G_EVAdoptionGoal": "No goal", "EV_8H_EVIncentives": "No", "EV_8I_TransitLines": 3, "EV_8J_TransitUsers": 0.05, "GREEN_9A_SustainabilityCommittee": "No", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "Yes", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 5, "GREEN_9H_ClimateEvents": "No", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 4, "WORK_11A_TradeUnions": 37, "WORK_11H_CommunityProjects": 4, "WORK_11I_HousingShelters": 3, "WORK_11K_WorkforceIncentives": 0, "WORK_11L_YouthEmploymentPrograms": 0, "WORK_11M_WorkforceProgram": "No", "WORK_11N_WorkforcePlan": "No", "HOUSING_12B_RemediationBusinesses": 0, "HOUSING_12C_HomesNeedRoofRepair": "N/A", "HOUSING_12E_FoodPantries": 2, "HOUSING_12F_LegalRentals": 900, "HOUSING_12G_EBTAcceptingMarkets": 7, "HOUSING_12H_RepairCafes": "No", "HOUSING_12I_HousingEvents": 7, "HOUSING_12J_Section8Homes": 0, "NYSERDA_Total": 1000, "Climate Smart Community Status": "registered", "Climate Action Plan Status": "No", "Renewable Energy Goal Status": "Yes", "Public EV Chargers": 176, "Public Transportation Lines": 3, "Environmental, Climate, and Sustainability NGO Count": 5}, {"Municipality": "Southampton", "NYSERDA_1A_Benchmarking": 0, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 700, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 2000, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 200, "NYSERDA_1J_CSC_Certification": 600, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 100, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "Participating", "NYSERDA_1R_StarDesignation": "5 stars", "CSC_2_Designation": "bronze", "CLIMATE_3A_FormalPlan": "Yes", "CLIMATE_3B_InformalPlan": "No", "CLIMATE_3C_PlanUpdated": "No", "CLIMATE_3E_EnvironmentalJustice": "No", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "Yes", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "Yes", "CLIMATE_3K_EVCode": "Yes", "SCHOOL_4A_CollegeEnvPrograms": 1, "SCHOOL_4B_CollegeCleanEnergy": 1, "SCHOOL_4C_CollegeEnvCourses": 1, "SCHOOL_4D_TotalColleges": 1, "SCHOOL_4E_HS_EnvPrograms": 3, "SCHOOL_4F_HS_CleanEnergy": 2, "SCHOOL_4H_TotalHighSchools": 3, "GOV_5A_ClimateCommittee": "Yes", "GOV_5B_EnvironmentalCommittee": "Yes", "GOV_5C_SustainabilityOffice": "Yes", "GOV_5D_SustainabilityCoordinator": "Yes", "ENERGY_6A_GHGInventory": "Yes", "ENERGY_6B_GovOnlyInventory": "Community", "ENERGY_6C_Benchmarking": "Yes", "ENERGY_6D_EnergyCode": "Both", "ENERGY_6E_EfficiencyIncentives": "Yes", "ENERGY_6I_LargeSolar": "Yes", "ENERGY_6J_WindProjects": "Yes", "ENERGY_6L_PACE": "Yes", "ENERGY_6N_RenewableGoal": "Yes", "ENERGY_6O_RenewableIncentives": "Yes", "BUILD_7A_GovLEED": 0, "BUILD_7C_TotalLEED": 7, "BUILD_7E_LEEDPolicy": "Government Only", "BUILD_7F_LEEDIncentives": "Yes", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 6, "EV_8D_TotalEVs": 2400, "EV_8F_PublicChargers": 94, "EV_8G_EVAdoptionGoal": "No goal", "EV_8H_EVIncentives": "Yes", "EV_8I_TransitLines": 4, "EV_8J_TransitUsers": 0.11, "GREEN_9A_SustainabilityCommittee": "Yes", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "Yes", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 8, "GREEN_9H_ClimateEvents": "No", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 4, "WORK_11A_TradeUnions": 11, "WORK_11H_CommunityProjects": 23, "WORK_11I_HousingShelters": 1, "WORK_11K_WorkforceIncentives": 4, "WORK_11L_YouthEmploymentPrograms": 4, "WORK_11M_WorkforceProgram": "Yes", "WORK_11N_WorkforcePlan": "No", "HOUSING_12B_RemediationBusinesses": 0, "HOUSING_12C_HomesNeedRoofRepair": "N/A", "HOUSING_12E_FoodPantries": 11, "HOUSING_12F_LegalRentals": 1000, "HOUSING_12G_EBTAcceptingMarkets": 6, "HOUSING_12H_RepairCafes": 1, "HOUSING_12I_HousingEvents": "Yes", "HOUSING_12J_Section8Homes": 326, "NYSERDA_Total": 3800, "Climate Smart Community Status": "bronze", "Climate Action Plan Status": "Yes", "Renewable Energy Goal Status": "Yes", "Public EV Chargers": 94, "Public Transportation Lines": 4, "Environmental, Climate, and Sustainability NGO Count": 8}, {"Municipality": "Southold", "NYSERDA_1A_Benchmarking": 100, "NYSERDA_1B_BuildReady": 0, "NYSERDA_1C_RenewableEnergy": 0, "NYSERDA_1D_BuildingDemo": 0, "NYSERDA_1E_LEDStreetlights": 0, "NYSERDA_1F_ThermalNetworks": 0, "NYSERDA_1G_CommunityCampaigns": 0, "NYSERDA_1H_Trainings": 0, "NYSERDA_1I_CodeTraining": 0, "NYSERDA_1J_CSC_Certification": 0, "NYSERDA_1K_CCA": 0, "NYSERDA_1L_GreenFinancing": 0, "NYSERDA_1M_CleanFleets": 100, "NYSERDA_1N_ElectricLandscaping": 0, "NYSERDA_1O_FleetInventory": 0, "NYSERDA_1P_SolarPermit": 200, "NYSERDA_1Q_Designation": "designated", "NYSERDA_1R_StarDesignation": "1 star", "CSC_2_Designation": "registered", "CLIMATE_3A_FormalPlan": "No", "CLIMATE_3B_InformalPlan": "Yes", "CLIMATE_3C_PlanUpdated": "N/A", "CLIMATE_3E_EnvironmentalJustice": "No", "CLIMATE_3G_EnergyPlan": "Yes", "CLIMATE_3H_CodeClimate": "No", "CLIMATE_3I_CodeRenewables": "Yes", "CLIMATE_3J_RenewableMoratorium": "Yes", "CLIMATE_3K_EVCode": "No", "SCHOOL_4A_CollegeEnvPrograms": 0, "SCHOOL_4B_CollegeCleanEnergy": 0, "SCHOOL_4C_CollegeEnvCourses": 0, "SCHOOL_4D_TotalColleges": 0, "SCHOOL_4E_HS_EnvPrograms": 1, "SCHOOL_4F_HS_CleanEnergy": 1, "SCHOOL_4H_TotalHighSchools": 3, "GOV_5A_ClimateCommittee": "Yes", "GOV_5B_EnvironmentalCommittee": "Yes", "GOV_5C_SustainabilityOffice": "No", "GOV_5D_SustainabilityCoordinator": "No", "ENERGY_6A_GHGInventory": "No", "ENERGY_6B_GovOnlyInventory": "Community", "ENERGY_6C_Benchmarking": "Yes", "ENERGY_6D_EnergyCode": "No goal", "ENERGY_6E_EfficiencyIncentives": "No", "ENERGY_6I_LargeSolar": "Yes", "ENERGY_6J_WindProjects": "No", "ENERGY_6L_PACE": "Yes", "ENERGY_6N_RenewableGoal": "No", "ENERGY_6O_RenewableIncentives": "No", "BUILD_7A_GovLEED": 0, "BUILD_7C_TotalLEED": 1, "BUILD_7E_LEEDPolicy": "Government Only", "BUILD_7F_LEEDIncentives": "Yes", "BUILD_7I_HeatPumpIncentives": "No", "EV_8C_GovChargers": 6, "EV_8D_TotalEVs": 653, "EV_8F_PublicChargers": 18, "EV_8G_EVAdoptionGoal": "No goal", "EV_8H_EVIncentives": "No", "EV_8I_TransitLines": 3, "EV_8J_TransitUsers": 0.01, "GREEN_9A_SustainabilityCommittee": "No", "GREEN_9B_SustainabilityPrograms": "Yes", "GREEN_9C_GreenJobsPrograms": "Yes", "GREEN_9E_GreenIncentives": "Yes", "GREEN_9F_NGOCount": 7, "GREEN_9H_ClimateEvents": "Yes", "POLICY_10B_FinancialSupport": "Yes", "POLICY_10D_CouncilMembers": 4, "WORK_11A_TradeUnions": 7, "WORK_11H_CommunityProjects": 8, "WORK_11I_HousingShelters": 3, "WORK_11K_WorkforceIncentives": 2, "WORK_11L_YouthEmploymentPrograms": 0, "WORK_11M_WorkforceProgram": "No", "WORK_11N_WorkforcePlan": "No", "HOUSING_12B_RemediationBusinesses": 0, "HOUSING_12C_HomesNeedRoofRepair": "N/A", "HOUSING_12E_FoodPantries": 3, "HOUSING_12F_LegalRentals": 459, "HOUSING_12G_EBTAcceptingMarkets": 2, "HOUSING_12H_RepairCafes": 0, "HOUSING_12I_HousingEvents": 3, "HOUSING_12J_Section8Homes": 370, "NYSERDA_Total": 400, "Climate Smart Community Status": "registered", "Climate Action Plan Status": "No", "Renewable Energy Goal Status": "No", "Public EV Chargers": 18, "Public Transportation Lines": 3, "Environmental, Climate, and Sustainability NGO Count": 7}], "nysPointFields": ["NYSERDA_1A_Benchmarking", "NYSERDA_1B_BuildReady", "NYSERDA_1C_RenewableEnergy", "NYSERDA_1D_BuildingDemo", "NYSERDA_1E_LEDStreetlights", "NYSERDA_1F_ThermalNetworks", "NYSERDA_1G_CommunityCampaigns", "NYSERDA_1H_Trainings", "NYSERDA_1I_CodeTraining", "NYSERDA_1J_CSC_Certification", "NYSERDA_1K_CCA", "NYSERDA_1L_GreenFinancing", "NYSERDA_1M_CleanFleets", "NYSERDA_1N_ElectricLandscaping", "NYSERDA_1O_FleetInventory", "NYSERDA_1P_SolarPermit"], "categories": [{"name": "NYSERDA Clean Energy Communities Program", "fields": ["NYSERDA_1A_Benchmarking", "NYSERDA_1B_BuildReady", "NYSERDA_1C_RenewableEnergy", "NYSERDA_1D_BuildingDemo", "NYSERDA_1E_LEDStreetlights", "NYSERDA_1F_ThermalNetworks", "NYSERDA_1G_CommunityCampaigns", "NYSERDA_1H_Trainings", "NYSERDA_1I_CodeTraining", "NYSERDA_1J_CSC_Certification", "NYSERDA_1K_CCA", "NYSERDA_1L_GreenFinancing", "NYSERDA_1M_CleanFleets", "NYSERDA_1N_ElectricLandscaping", "NYSERDA_1O_FleetInventory", "NYSERDA_1P_SolarPermit", "NYSERDA_1Q_Designation", "NYSERDA_1R_StarDesignation"]}, {"name": "Climate Smart Communities", "fields": ["CSC_2_Designation"]}, {"name": "Climate Plans and Local Policies", "fields": ["CLIMATE_3A_FormalPlan", "CLIMATE_3B_InformalPlan", "CLIMATE_3C_PlanUpdated", "CLIMATE_3E_EnvironmentalJustice", "CLIMATE_3G_EnergyPlan", "CLIMATE_3H_CodeClimate", "CLIMATE_3I_CodeRenewables", "CLIMATE_3J_RenewableMoratorium", "CLIMATE_3K_EVCode", "POLICY_10B_FinancialSupport", "POLICY_10D_CouncilMembers"]}, {"name": "Energy and Renewable Programs", "fields": ["ENERGY_6A_GHGInventory", "ENERGY_6B_GovOnlyInventory", "ENERGY_6C_Benchmarking", "ENERGY_6D_EnergyCode", "ENERGY_6E_EfficiencyIncentives", "ENERGY_6I_LargeSolar", "ENERGY_6J_WindProjects", "ENERGY_6L_PACE", "ENERGY_6N_RenewableGoal", "ENERGY_6O_RenewableIncentives"]}, {"name": "Buildings", "fields": ["BUILD_7A_GovLEED", "BUILD_7C_TotalLEED", "BUILD_7E_LEEDPolicy", "BUILD_7F_LEEDIncentives", "BUILD_7I_HeatPumpIncentives"]}, {"name": "Transportation / EV Infrastructure", "fields": ["EV_8C_GovChargers", "EV_8D_TotalEVs", "EV_8F_PublicChargers", "EV_8G_EVAdoptionGoal", "EV_8H_EVIncentives", "EV_8I_TransitLines", "EV_8J_TransitUsers"]}, {"name": "Workforce Development", "fields": ["SCHOOL_4A_CollegeEnvPrograms", "SCHOOL_4B_CollegeCleanEnergy", "SCHOOL_4C_CollegeEnvCourses", "SCHOOL_4D_TotalColleges", "SCHOOL_4E_HS_EnvPrograms", "SCHOOL_4F_HS_CleanEnergy", "SCHOOL_4H_TotalHighSchools", "WORK_11A_TradeUnions", "WORK_11H_CommunityProjects", "WORK_11I_HousingShelters", "WORK_11K_WorkforceIncentives", "WORK_11L_YouthEmploymentPrograms", "WORK_11M_WorkforceProgram", "WORK_11N_WorkforcePlan"]}, {"name": "Housing and Community Resources", "fields": ["HOUSING_12B_RemediationBusinesses", "HOUSING_12C_HomesNeedRoofRepair", "HOUSING_12E_FoodPantries", "HOUSING_12F_LegalRentals", "HOUSING_12G_EBTAcceptingMarkets", "HOUSING_12H_RepairCafes", "HOUSING_12I_HousingEvents", "HOUSING_12J_Section8Homes"]}, {"name": "Community Organizations", "fields": ["GOV_5A_ClimateCommittee", "GOV_5B_EnvironmentalCommittee", "GOV_5C_SustainabilityOffice", "GOV_5D_SustainabilityCoordinator", "GREEN_9A_SustainabilityCommittee", "GREEN_9B_SustainabilityPrograms", "GREEN_9C_GreenJobsPrograms", "GREEN_9E_GreenIncentives", "GREEN_9F_NGOCount", "GREEN_9H_ClimateEvents"]}], "displayCategories": [{"name": "Energy and Renewable Programs", "fields": ["ENERGY_6A_GHGInventory", "ENERGY_6B_GovOnlyInventory", "ENERGY_6C_Benchmarking", "ENERGY_6D_EnergyCode", "ENERGY_6E_EfficiencyIncentives", "ENERGY_6I_LargeSolar", "ENERGY_6J_WindProjects", "ENERGY_6L_PACE", "ENERGY_6N_RenewableGoal", "ENERGY_6O_RenewableIncentives"]}, {"name": "Buildings", "fields": ["BUILD_7A_GovLEED", "BUILD_7C_TotalLEED", "BUILD_7E_LEEDPolicy", "BUILD_7F_LEEDIncentives", "BUILD_7I_HeatPumpIncentives"]}, {"name": "EV Infrastructure", "fields": ["EV_8C_GovChargers", "EV_8D_TotalEVs", "EV_8F_PublicChargers", "EV_8G_EVAdoptionGoal", "EV_8H_EVIncentives", "EV_8J_TransitUsers"]}, {"name": "Workforce Development", "fields": ["SCHOOL_4A_CollegeEnvPrograms", "SCHOOL_4B_CollegeCleanEnergy", "SCHOOL_4C_CollegeEnvCourses", "SCHOOL_4D_TotalColleges", "SCHOOL_4E_HS_EnvPrograms", "SCHOOL_4F_HS_CleanEnergy", "SCHOOL_4H_TotalHighSchools", "WORK_11A_TradeUnions", "WORK_11H_CommunityProjects", "WORK_11I_HousingShelters", "WORK_11K_WorkforceIncentives", "WORK_11L_YouthEmploymentPrograms", "WORK_11M_WorkforceProgram"]}, {"name": "Housing and Community Resources", "fields": ["HOUSING_12B_RemediationBusinesses", "HOUSING_12C_HomesNeedRoofRepair", "HOUSING_12E_FoodPantries", "HOUSING_12F_LegalRentals", "HOUSING_12G_EBTAcceptingMarkets", "HOUSING_12H_RepairCafes", "HOUSING_12I_HousingEvents", "HOUSING_12J_Section8Homes"]}], "fieldLabels": {"Municipality": "Municipality", "NYSERDA_1A_Benchmarking": "Benchmarking", "NYSERDA_1B_BuildReady": "Build Ready Program", "NYSERDA_1C_RenewableEnergy": "Renewable Energy", "NYSERDA_1D_BuildingDemo": "Municipal Building Demonstration", "NYSERDA_1E_LEDStreetlights": "LED Streetlights", "NYSERDA_1F_ThermalNetworks": "Thermal Energy Networks", "NYSERDA_1G_CommunityCampaigns": "Community Campaigns", "NYSERDA_1H_Trainings": "County-Hosted Trainings", "NYSERDA_1I_CodeTraining": "Energy Code Training", "NYSERDA_1J_CSC_Certification": "Climate Smart Communities Certification", "NYSERDA_1K_CCA": "Community Choice Aggregation", "NYSERDA_1L_GreenFinancing": "Green Financing", "NYSERDA_1M_CleanFleets": "Clean Fleets", "NYSERDA_1N_ElectricLandscaping": "Electric Landscaping Requirement", "NYSERDA_1O_FleetInventory": "Municipal Fleet Inventory", "NYSERDA_1P_SolarPermit": "Unified Solar Permit", "NYSERDA_1Q_Designation": "Clean Energy Community Designation", "NYSERDA_1R_StarDesignation": "Clean Energy Community Star Level", "CSC_2_Designation": "Climate Smart Communities Status", "CLIMATE_3A_FormalPlan": "Formal Climate Action Plan", "CLIMATE_3B_InformalPlan": "Informal Climate Planning", "CLIMATE_3C_PlanUpdated": "Climate Plan Updated", "CLIMATE_3E_EnvironmentalJustice": "Environmental Justice Included", "CLIMATE_3G_EnergyPlan": "Energy Plan", "CLIMATE_3H_CodeClimate": "Climate-Related Local Code", "CLIMATE_3I_CodeRenewables": "Renewable Energy Local Code", "CLIMATE_3J_RenewableMoratorium": "Renewable Energy Moratorium", "CLIMATE_3K_EVCode": "Electric Vehicle Local Code", "SCHOOL_4A_CollegeEnvPrograms": "College Environmental Programs", "SCHOOL_4B_CollegeCleanEnergy": "College Clean Energy Programs", "SCHOOL_4C_CollegeEnvCourses": "College Environmental Courses", "SCHOOL_4D_TotalColleges": "Total Colleges", "SCHOOL_4E_HS_EnvPrograms": "High School Environmental Programs", "SCHOOL_4F_HS_CleanEnergy": "High School Clean Energy Programs", "SCHOOL_4H_TotalHighSchools": "Total High Schools", "GOV_5A_ClimateCommittee": "Municipal Climate Committee", "GOV_5B_EnvironmentalCommittee": "Municipal Environmental Committee", "GOV_5C_SustainabilityOffice": "Sustainability Office", "GOV_5D_SustainabilityCoordinator": "Sustainability Coordinator", "ENERGY_6A_GHGInventory": "Greenhouse Gas Inventory", "ENERGY_6B_GovOnlyInventory": "Greenhouse Gas Inventory Scope", "ENERGY_6C_Benchmarking": "Energy Benchmarking", "ENERGY_6D_EnergyCode": "Energy Code Activity", "ENERGY_6E_EfficiencyIncentives": "Energy Efficiency Incentives", "ENERGY_6I_LargeSolar": "Large Solar Projects", "ENERGY_6J_WindProjects": "Wind Projects", "ENERGY_6L_PACE": "PACE Financing", "ENERGY_6N_RenewableGoal": "Renewable Energy Goal", "ENERGY_6O_RenewableIncentives": "Renewable Energy Incentives", "BUILD_7A_GovLEED": "Government LEED Buildings", "BUILD_7C_TotalLEED": "Total LEED Buildings", "BUILD_7E_LEEDPolicy": "LEED Policy", "BUILD_7F_LEEDIncentives": "LEED Incentives", "BUILD_7I_HeatPumpIncentives": "Heat Pump Incentives", "EV_8C_GovChargers": "Government EV Chargers", "EV_8D_TotalEVs": "Total Electric Vehicles", "EV_8F_PublicChargers": "Public EV Chargers", "EV_8G_EVAdoptionGoal": "EV Adoption Goal", "EV_8H_EVIncentives": "EV Incentives", "EV_8I_TransitLines": "Public Transportation Lines", "EV_8J_TransitUsers": "Public Transportation Riders", "GREEN_9A_SustainabilityCommittee": "Community Sustainability Committee", "GREEN_9B_SustainabilityPrograms": "Community Sustainability Programs", "GREEN_9C_GreenJobsPrograms": "Green Jobs Programs", "GREEN_9E_GreenIncentives": "Green Incentives", "GREEN_9F_NGOCount": "Environmental, Climate, and Sustainability Organizations", "GREEN_9H_ClimateEvents": "Climate Events", "POLICY_10B_FinancialSupport": "Financial Support for Climate or Clean Energy Work", "POLICY_10D_CouncilMembers": "Council Member Count", "WORK_11A_TradeUnions": "Trade Unions", "WORK_11H_CommunityProjects": "Community Workforce Projects", "WORK_11I_HousingShelters": "Housing Shelters", "WORK_11K_WorkforceIncentives": "Workforce Incentives", "WORK_11L_YouthEmploymentPrograms": "Youth Employment Programs", "WORK_11M_WorkforceProgram": "Clean Energy Workforce Program", "WORK_11N_WorkforcePlan": "Workforce Plan", "HOUSING_12B_RemediationBusinesses": "Remediation Businesses", "HOUSING_12C_HomesNeedRoofRepair": "Homes Needing Roof Repair", "HOUSING_12E_FoodPantries": "Food Pantries", "HOUSING_12F_LegalRentals": "Legal Rental Units", "HOUSING_12G_EBTAcceptingMarkets": "EBT-Accepting Markets", "HOUSING_12H_RepairCafes": "Repair Cafes", "HOUSING_12I_HousingEvents": "Housing Events", "HOUSING_12J_Section8Homes": "Section 8 Homes", "NYSERDA_Total": "NYSERDA Clean Energy Communities Points", "Climate Smart Community Status": "Climate Smart Communities Status", "Climate Action Plan Status": "Climate Action Plan", "Renewable Energy Goal Status": "Renewable Energy Goal", "Public EV Chargers": "Public EV Chargers", "Public Transportation Lines": "Public Transportation Lines", "Environmental, Climate, and Sustainability NGO Count": "Environmental, Climate, and Sustainability Organizations"}};
+const fmt = new Intl.NumberFormat('en-US');
+const colors = ['#224c7a','#4f7f37','#b28a2e','#6b7280','#0f766e','#7c3aed','#9a3412','#0e7490','#854d0e','#475569','#166534','#1e40af','#991b1b','#365314','#581c87','#374151'];
+const metricOptions = [
+  {label:'NYSERDA Points', field:'NYSERDA_Total', type:'number'},
+  {label:'Public EV Chargers', field:'Public EV Chargers', type:'number'},
+  {label:'Climate Smart Communities Status', field:'Climate Smart Community Status', type:'status'},
+  {label:'Climate Action Plan', field:'Climate Action Plan Status', type:'status'},
+  {label:'Renewable Energy Goal', field:'Renewable Energy Goal Status', type:'status'},
+  {label:'Public Transportation Lines', field:'Public Transportation Lines', type:'number'},
+  {label:'Environmental Organization Count', field:'Environmental, Climate, and Sustainability NGO Count', type:'number'}
+];
+let selectedMetric = metricOptions[0];
+function el(id) { return document.getElementById(id); }
+function labelFor(field) { return DATA.fieldLabels[field] || field; }
+function valueText(value) {
+  if (value === '' || value === null || value === undefined) return 'Not available';
+  const text = String(value).trim();
+  const lower = text.toLowerCase();
+  const replacements = {
+    'yes':'Yes', 'no':'No', 'n/a':'Not applicable', 'registered':'Registered',
+    'bronze':'Bronze', 'not participating':'Not participating', 'participating':'Participating',
+    'designated':'Designated', 'no goal':'No goal', 'government only':'Government only',
+    'community':'Community', 'both':'Both', 'goverment operations':'Government operations'
+  };
+  if (replacements[lower]) return replacements[lower];
+  return text.replace(/\b\w/g, ch => ch.toUpperCase()).replace(/Nys/g, 'NYS').replace(/Ev\b/g, 'EV');
+}
+function num(value) { const n = Number(value); return Number.isFinite(n) ? n : 0; }
+function presentValue(value) {
+  const t = String(value ?? '').trim().toLowerCase();
+  return !['', 'no', 'n/a', 'not participating', 'no goal', '0'].includes(t);
+}
+function averageFor(field) {
+  return DATA.records.reduce((sum, r) => sum + num(r[field]), 0) / DATA.records.length;
+}
+function rankFor(field, record) {
+  const ordered = [...DATA.records].sort((a,b)=>num(b[field])-num(a[field]) || a.Municipality.localeCompare(b.Municipality));
+  return ordered.findIndex(item => item.Municipality === record.Municipality) + 1;
+}
+function comparisonMeta(field, record, formatter=(value)=>fmt.format(value)) {
+  const avg = averageFor(field);
+  const value = num(record[field]);
+  const delta = avg ? Math.round((value - avg) / avg * 100) : 0;
+  const nearAverage = Math.abs(delta) <= 2;
+  const cls = nearAverage ? 'neutral' : delta > 0 ? 'above' : 'below';
+  const direction = nearAverage ? 'At municipality average' : `${Math.abs(delta)}% ${delta > 0 ? 'above' : 'below'} municipality average`;
+  return `<span class="comparison-delta ${cls}">${direction}</span>
+    <span class="comparison-rank">Rank #${rankFor(field, record)}</span>`;
+}
+function percentValue(value) {
+  const n = num(value);
+  return n <= 1 ? `${(n * 100).toFixed(n * 100 < 1 && n > 0 ? 1 : 0)}%` : `${n.toFixed(0)}%`;
+}
+function metricCard(title, value, meta='') {
+  return `<div class="metric"><div class="metric-title">${title}</div><div class="metric-value">${value}</div>${meta ? `<div class="metric-meta">${meta}</div>` : ''}</div>`;
+}
+function categoryMetric(field, r, formatter=(value)=>fmt.format(num(value)), compare=true) {
+  const value = formatter(r[field]);
+  const meta = compare ? comparisonMeta(field, r, (value)=>formatter(value)) : '';
+  return `<div class="category-metric"><div class="category-metric-title">${labelFor(field)}</div><div class="category-metric-value">${value}</div>${meta ? `<div class="comparison-stat">${meta}</div>` : ''}</div>`;
+}
+function statusBadge(value) {
+  const text = valueText(value);
+  const lower = text.toLowerCase();
+  const cls = lower === 'yes' || lower.includes('community') || lower.includes('both') || lower.includes('government') ? 'yes' : lower === 'no' || lower.includes('not applicable') || lower.includes('no goal') ? 'no' : 'neutral';
+  const symbol = cls === 'yes' ? '✓' : cls === 'no' ? '×' : '';
+  return `<span class="status-badge ${cls}">${symbol ? `${symbol} ` : ''}${text}</span>`;
+}
+function indicatorCard(field, r) {
+  return `<div class="indicator-card"><div class="indicator-title">${labelFor(field)}</div>${statusBadge(r[field])}</div>`;
+}
+function checklist(fields, r) {
+  return `<div class="checklist">${fields.map(field => `<div class="check-row"><div class="check-label">${labelFor(field)}</div>${statusBadge(r[field])}</div>`).join('')}</div>`;
+}
+function ratioProgress(title, met, total) {
+  const safeTotal = Math.max(num(total), 0);
+  const safeMet = Math.max(0, Math.min(num(met), safeTotal));
+  const pct = safeTotal ? Math.round(safeMet / safeTotal * 100) : 0;
+  return `<div class="progress-card"><div class="progress-title">${title}</div><div class="progress-value">${fmt.format(safeMet)} / ${fmt.format(safeTotal)} (${pct}%)</div><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`;
+}
+function detailBox(title, content) {
+  return `<details class="detail-box"><summary>${title}</summary><div class="detail-content">${content}</div></details>`;
+}
+function sectionBlock(title, body) {
+  return `<h4>${title}</h4>${body}`;
+}
+function kpiHtml(title, value, note) {
+  return `<div class="metric"><div class="metric-title">${title}</div><div class="metric-value">${value}</div>${note ? `<p class="metric-note">${note}</p>` : ''}</div>`;
+}
+function renderOverview() {
+  const o = DATA.overview;
+  el('overview-kpis').innerHTML = [
+    kpiHtml('average NYSERDA points earned', fmt.format(o.averageNYSERDAPoints), 'Out of 30,200 possible across assessed categories.'),
+    kpiHtml('have climate action plans', `${o.climateActionPlanPercent}%`, ''),
+    kpiHtml('have renewable energy goals', `${o.renewableEnergyGoalPercent}%`, ''),
+    kpiHtml('public EV chargers recorded', fmt.format(o.publicEVChargers), ''),
+    kpiHtml('have clean energy workforce programs', `${o.cleanEnergyWorkforceProgramPercent}%`, '')
+  ].join('');
+  const ranked = [...DATA.records].sort((a,b)=>num(b.NYSERDA_Total)-num(a.NYSERDA_Total));
+  renderBars('rank-chart', ranked, 'NYSERDA_Total', true);
+  renderHistogram();
+}
+function renderBars(target, rows, field, compact=false) {
+  const max = Math.max(...rows.map(r=>num(r[field])), 1);
+  el(target).innerHTML = rows.map(r => `<div class="bar-row"><div class="bar-label">${r.Municipality}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(2, num(r[field])/max*100)}%"></div></div><div class="bar-value">${fmt.format(num(r[field]))}</div></div>`).join('');
+}
+function renderHistogram() {
+  const values = DATA.records.map(r=>num(r.NYSERDA_Total));
+  const bins = [[0,499],[500,999],[1000,1499],[1500,1999],[2000,2499],[2500,3499],[3500,4999]];
+  const counts = bins.map(([a,b]) => values.filter(v => v>=a && v<=b).length);
+  const max = Math.max(...counts, 1);
+  el('histogram').innerHTML = `<div class="hist">${bins.map((b,i)=>`<div class="hist-bin"><div class="hist-count">${counts[i]}</div><div class="hist-bar" style="height:${counts[i]/max*155}px"></div><div class="hist-label">${fmt.format(b[0])}-${fmt.format(b[1])}</div></div>`).join('')}</div>`;
+}
+function selectedRecord() { return DATA.records.find(r=>r.Municipality === el('municipality-select').value) || DATA.records[0]; }
+function renderExplorer() {
+  const r = selectedRecord();
+  el('municipality-map').src = `https://www.google.com/maps?q=${encodeURIComponent(r.Municipality + ', Long Island, NY')}&output=embed`;
+  el('selected-kpis').innerHTML = [
+    metricCard('NYSERDA Points', `${fmt.format(num(r.NYSERDA_Total))} points`, comparisonMeta('NYSERDA_Total', r)),
+    metricCard('Climate Smart Communities Status', valueText(r['Climate Smart Community Status'])),
+    metricCard('Climate Action Plan', valueText(r['Climate Action Plan Status'])),
+    metricCard('Renewable Energy Goal', valueText(r['Renewable Energy Goal Status'])),
+    metricCard('Public EV Chargers', fmt.format(num(r['Public EV Chargers'])), comparisonMeta('Public EV Chargers', r)),
+    metricCard('Public Transportation Lines', fmt.format(num(r['Public Transportation Lines'])), comparisonMeta('Public Transportation Lines', r)),
+    metricCard('Public Transportation Riders', percentValue(r['EV_8J_TransitUsers'])),
+    metricCard('Environmental, Climate, and Sustainability Organizations', fmt.format(num(r['Environmental, Climate, and Sustainability NGO Count'])), comparisonMeta('Environmental, Climate, and Sustainability NGO Count', r)),
+    metricCard('Youth Employment Programs', fmt.format(num(r['WORK_11L_YouthEmploymentPrograms'])), comparisonMeta('WORK_11L_YouthEmploymentPrograms', r))
+  ].join('');
+  renderDonut(r);
+  renderNysTable(r);
+  renderCategories(r);
+}
+function renderDonut(r) {
+  const parts = DATA.nysPointFields.map((field, i) => ({field, label:labelFor(field), value:num(r[field]), color:colors[i % colors.length]})).filter(x=>x.value>0);
+  const total = parts.reduce((sum,p)=>sum+p.value,0);
+  if (!total) {
+    el('donut').style.background = '#e5e7eb';
+    el('donut').innerHTML = '';
+    el('donut-legend').innerHTML = '<p>No NYSERDA point values are recorded for this municipality.</p>';
+    return;
+  }
+  let start = 0;
+  const stops = parts.map(p => {
+    const end = start + p.value / total * 360;
+    const stop = `${p.color} ${start}deg ${end}deg`;
+    p.midAngle = start + (end - start) / 2;
+    p.percent = Math.round(p.value / total * 100);
+    start = end;
+    return stop;
+  });
+  el('donut').style.background = `conic-gradient(${stops.join(', ')})`;
+  el('donut').innerHTML = parts.map(p => {
+    const radians = (p.midAngle - 90) * Math.PI / 180;
+    const radius = 74;
+    const x = 105 + Math.cos(radians) * radius;
+    const y = 105 + Math.sin(radians) * radius;
+    return `<span class="donut-label" style="left:${x}px; top:${y}px;">${p.percent}%</span>`;
+  }).join('');
+  el('donut-legend').innerHTML = parts.map(p => `<div class="legend-item"><span class="swatch" style="background:${p.color}"></span><span>${p.label}</span><strong>${fmt.format(p.value)}</strong><span>${Math.round(p.value / total * 100)}%</span></div>`).join('');
+}
+function renderNysTable(r) {
+  const rows = DATA.nysPointFields.map(field => `<tr><td>${labelFor(field)}</td><td>${fmt.format(num(r[field]))}</td></tr>`).join('');
+  el('nys-points-table').innerHTML = `<thead><tr><th>NYSERDA action</th><th>Points</th></tr></thead><tbody>${rows}</tbody>`;
+}
+function renderMetricToggle() {
+  el('metric-toggle').innerHTML = metricOptions.map((m,i)=>`<button class="${i===0?'active':''}" data-field="${m.field}">${m.label}</button>`).join('');
+  [...el('metric-toggle').querySelectorAll('button')].forEach(btn => btn.addEventListener('click', () => {
+    selectedMetric = metricOptions.find(m=>m.field===btn.dataset.field);
+    [...el('metric-toggle').querySelectorAll('button')].forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderBenchmark();
+  }));
+}
+function statusRankValue(value) {
+  const t = String(value ?? '').toLowerCase();
+  if (t.includes('bronze') || t.includes('designated') || t === 'yes' || t.includes('community') || t.includes('government')) return 1;
+  if (presentValue(value)) return 0.5;
+  return 0;
+}
+function renderBenchmark() {
+  const field = selectedMetric.field;
+  let rows = [...DATA.records];
+  if (selectedMetric.type === 'number') rows.sort((a,b)=>num(b[field])-num(a[field]) || a.Municipality.localeCompare(b.Municipality));
+  else rows.sort((a,b)=>statusRankValue(b[field])-statusRankValue(a[field]) || String(a[field]).localeCompare(String(b[field])) || a.Municipality.localeCompare(b.Municipality));
+  const selected = selectedRecord().Municipality;
+  if (selectedMetric.type === 'number') {
+    const max = Math.max(...rows.map(r=>num(r[field])),1);
+    el('benchmark-chart').innerHTML = rows.map((r,i)=>`<div class="bar-row"><div class="bar-label">${i+1}. ${r.Municipality}${r.Municipality===selected?' (selected)':''}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,num(r[field])/max*100)}%"></div></div><div class="bar-value">${fmt.format(num(r[field]))}</div></div>`).join('');
+  } else {
+    el('benchmark-chart').innerHTML = `<table><thead><tr><th>Rank Group</th><th>Municipality</th><th>${selectedMetric.label}</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.Municipality}${r.Municipality===selected?' (selected)':''}</td><td>${valueText(r[field])}</td></tr>`).join('')}</tbody></table>`;
+  }
+}
+function renderCategories(r) {
+  const renderers = {
+    'Energy and Renewable Programs': renderEnergyCategory,
+    'Buildings': renderBuildingsCategory,
+    'EV Infrastructure': renderEvCategory,
+    'Workforce Development': renderWorkforceCategory,
+    'Housing and Community Resources': renderHousingCategory
+  };
+  el('category-sections').innerHTML = DATA.displayCategories.map((cat) => {
+    const body = (renderers[cat.name] || renderGenericCategory)(r, cat);
+    return `<section class="category"><h3>${cat.name}</h3><div class="content">${body}</div></section>`;
+  }).join('');
+}
+function renderEnergyCategory(r) {
+  const indicators = ['ENERGY_6N_RenewableGoal','ENERGY_6A_GHGInventory','ENERGY_6I_LargeSolar','ENERGY_6J_WindProjects','ENERGY_6L_PACE'];
+  const checks = ['ENERGY_6C_Benchmarking','ENERGY_6B_GovOnlyInventory','ENERGY_6D_EnergyCode','ENERGY_6E_EfficiencyIncentives','ENERGY_6O_RenewableIncentives'];
+  return `<div class="category-dashboard"><p class="category-blurb">${categoryBlurb('Energy and Renewable Programs')}</p>${sectionBlock('Key Indicators', `<div class="badge-grid">${indicators.map(field => indicatorCard(field, r)).join('')}</div>`)}${sectionBlock('Program Activity Checklist', checklist(checks, r))}</div>`;
+}
+function renderBuildingsCategory(r) {
+  const govLeed = valueText(r['BUILD_7A_GovLEED']) === 'Not applicable';
+  return `<div class="category-dashboard"><p class="category-blurb">${categoryBlurb('Buildings')}</p>${sectionBlock('Building Indicators', `<div class="category-metrics compact-metrics">${categoryMetric('BUILD_7C_TotalLEED', r)}${categoryMetric('BUILD_7A_GovLEED', r, (value)=>valueText(value) === 'Not applicable' ? 'Not applicable' : fmt.format(num(value)), !govLeed)}</div>`)}${sectionBlock('Policy and Incentive Checklist', checklist(['BUILD_7E_LEEDPolicy','BUILD_7F_LEEDIncentives','BUILD_7I_HeatPumpIncentives'], r))}</div>`;
+}
+function renderEvCategory(r) {
+  return `<div class="category-dashboard"><p class="category-blurb">${categoryBlurb('EV Infrastructure')}</p>${sectionBlock('Transportation and EV Indicators', `<div class="category-metrics compact-metrics">${categoryMetric('EV_8F_PublicChargers', r)}${categoryMetric('EV_8C_GovChargers', r)}${categoryMetric('EV_8D_TotalEVs', r)}${categoryMetric('EV_8J_TransitUsers', r, percentValue)}</div>`)}${sectionBlock('EV Policy Checklist', checklist(['EV_8G_EVAdoptionGoal','EV_8H_EVIncentives'], r))}</div>`;
+}
+function renderWorkforceCategory(r) {
+  const education = [
+    ratioProgress('College Clean Energy Programs', r['SCHOOL_4B_CollegeCleanEnergy'], r['SCHOOL_4D_TotalColleges']),
+    ratioProgress('College Environmental Courses', r['SCHOOL_4C_CollegeEnvCourses'], r['SCHOOL_4D_TotalColleges']),
+    ratioProgress('High School Environmental Programs', r['SCHOOL_4E_HS_EnvPrograms'], r['SCHOOL_4H_TotalHighSchools']),
+    ratioProgress('High School Clean Energy Programs', r['SCHOOL_4F_HS_CleanEnergy'], r['SCHOOL_4H_TotalHighSchools'])
+  ].join('');
+  return `<div class="category-dashboard"><p class="category-blurb">${categoryBlurb('Workforce Development')}</p>${sectionBlock('Education Pipeline', `<div class="progress-grid">${education}</div>`)}${sectionBlock('Employment Ecosystem', `<div class="category-metrics">${categoryMetric('WORK_11A_TradeUnions', r)}${categoryMetric('WORK_11H_CommunityProjects', r)}${categoryMetric('WORK_11I_HousingShelters', r)}${categoryMetric('WORK_11L_YouthEmploymentPrograms', r)}</div>`)}${sectionBlock('Program Availability', checklist(['WORK_11K_WorkforceIncentives','WORK_11M_WorkforceProgram'], r))}</div>`;
+}
+function renderHousingCategory(r) {
+  const roofValue = valueText(r['HOUSING_12C_HomesNeedRoofRepair']);
+  const roofDetail = roofValue !== 'Not applicable' && roofValue !== 'Not available' ? detailBox('Homes Needing Roof Repair', roofValue) : '';
+  return `<div class="category-dashboard"><p class="category-blurb">${categoryBlurb('Housing')}</p>${sectionBlock('Community Resource Inventory', `<div class="category-metrics">${categoryMetric('HOUSING_12B_RemediationBusinesses', r)}${categoryMetric('HOUSING_12E_FoodPantries', r)}${categoryMetric('HOUSING_12F_LegalRentals', r)}${categoryMetric('HOUSING_12G_EBTAcceptingMarkets', r)}${categoryMetric('HOUSING_12J_Section8Homes', r)}</div>`)}${sectionBlock('Housing Support Checklist', checklist(['HOUSING_12H_RepairCafes','HOUSING_12I_HousingEvents'], r))}${roofDetail}</div>`;
+}
+function renderGenericCategory(r, cat) {
+  return `<div class="category-dashboard"><p class="category-blurb">${categoryBlurb(cat.name)}</p><div class="badge-grid">${cat.fields.map(field => indicatorCard(field, r)).join('')}</div></div>`;
+}
+function categoryBlurb(name) {
+  if (name.includes('Energy')) return 'Renewable energy programs can help communities reduce emissions, improve long-term energy resilience, and support local clean energy investment.';
+  if (name.includes('EV Infrastructure')) return 'Public charging infrastructure supports electric vehicle adoption and helps reduce transportation-related emissions.';
+  if (name.includes('Climate Plans')) return 'Climate action plans help municipalities organize goals, policies, and projects for reducing emissions and preparing for climate impacts.';
+  if (name.includes('Buildings')) return 'LEED-certified buildings meet recognized standards for efficient, healthier, and more sustainable building design and operations.';
+  if (name.includes('Workforce')) return 'Clean energy workforce programs help prepare residents for emerging jobs in energy, sustainability, buildings, and infrastructure.';
+  if (name.includes('Housing')) return 'Housing and community resource indicators help show how municipalities are preparing residents and buildings for a cleaner and more resilient future.';
+  return 'These retained responses are shown for review before public-facing fields are narrowed in a future version.';
+}
+el('municipality-select').innerHTML = DATA.records.map(r=>`<option value="${r.Municipality}">${r.Municipality}</option>`).join('');
+el('municipality-select').addEventListener('change', renderExplorer);
+document.querySelectorAll('.section-nav button[data-view]').forEach(button => button.addEventListener('click', () => {
+  document.querySelectorAll('.section-nav button[data-view]').forEach(item => item.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+  button.classList.add('active');
+  el(button.dataset.view).classList.add('active');
+}));
+el('nav-toggle').addEventListener('click', () => {
+  const collapsed = document.body.classList.toggle('nav-collapsed');
+  el('nav-toggle').setAttribute('aria-expanded', String(!collapsed));
+  el('nav-toggle').setAttribute('aria-label', collapsed ? 'Expand navigation' : 'Collapse navigation');
+  el('nav-toggle').innerHTML = collapsed ? '<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span><span class="nav-label">Expand menu</span>' : '<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></span><span class="nav-label">Collapse menu</span>';
+});
+renderOverview();
+renderExplorer();
+</script>
+</body>
+</html>

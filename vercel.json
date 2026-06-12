@@ -1,0 +1,19 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/outputs/liceh_dashboard_prototype/looker_studio_dashboard_prototype.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/outputs/liceh_dashboard_prototype/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    }
+  ]
+}
