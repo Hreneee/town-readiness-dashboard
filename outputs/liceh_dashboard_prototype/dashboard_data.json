@@ -1452,6 +1452,134 @@
     "NYSERDA_1O_FleetInventory",
     "NYSERDA_1P_SolarPermit"
   ],
+  "nysMaxPoints": {
+    "NYSERDA_1A_Benchmarking": 1800,
+    "NYSERDA_1B_BuildReady": 800,
+    "NYSERDA_1C_RenewableEnergy": 4600,
+    "NYSERDA_1D_BuildingDemo": 4100,
+    "NYSERDA_1E_LEDStreetlights": 900,
+    "NYSERDA_1F_ThermalNetworks": 1000,
+    "NYSERDA_1G_CommunityCampaigns": 3800,
+    "NYSERDA_1H_Trainings": 1200,
+    "NYSERDA_1I_CodeTraining": 300,
+    "NYSERDA_1J_CSC_Certification": 1400,
+    "NYSERDA_1K_CCA": 2000,
+    "NYSERDA_1L_GreenFinancing": 1000,
+    "NYSERDA_1M_CleanFleets": 6700,
+    "NYSERDA_1N_ElectricLandscaping": 200,
+    "NYSERDA_1O_FleetInventory": 200,
+    "NYSERDA_1P_SolarPermit": 200
+  },
+  "higherInstitutions": {
+    "Brookhaven": [
+      {
+        "name": "St. Joseph's University",
+        "link": "https://www.sjny.edu/long-island"
+      },
+      {
+        "name": "Stony Brook University",
+        "link": "https://www.stonybrook.edu/"
+      },
+      {
+        "name": "Suffolk County Community College",
+        "link": "https://www.sunysuffolk.edu/"
+      }
+    ],
+    "City of Glen Cove": [
+      {
+        "name": "Webb Institute",
+        "link": "https://www.webb.edu/"
+      }
+    ],
+    "City of Long Beach": [
+      {
+        "name": "Rabbinical College of Long Island",
+        "link": "https://rabbinicalcollegelongisland.com/"
+      }
+    ],
+    "Hempstead": [
+      {
+        "name": "Hofstra University",
+        "link": "https://www.hofstra.edu/"
+      },
+      {
+        "name": "Molloy University",
+        "link": "https://www.molloy.edu/"
+      }
+    ],
+    "Huntington": [
+      {
+        "name": "Five Towns College",
+        "link": "https://www.ftc.edu/"
+      },
+      {
+        "name": "Seminary of the Immaculate Conception",
+        "link": "https://retreatsic.org/"
+      }
+    ],
+    "Islip": [
+      {
+        "name": "LIU Brentwood",
+        "link": "https://liu.edu/brentwood"
+      },
+      {
+        "name": "School of Health Sciences of Touro University",
+        "link": "https://shs.touro.edu/"
+      },
+      {
+        "name": "Suffolk County Community College Grant Campus",
+        "link": "https://www.sunysuffolk.edu/"
+      }
+    ],
+    "North Hempstead": [
+      {
+        "name": "New York College of Traditional Medicine",
+        "link": "https://nyctcm.edu/"
+      }
+    ],
+    "Oyster Bay": [
+      {
+        "name": "Cold Spring Harbor Laboratory (CSHL)",
+        "link": "https://www.cshl.edu/"
+      },
+      {
+        "name": "LIU Post Campus",
+        "link": "https://www.liu.edu/post"
+      },
+      {
+        "name": "New York Institute of Technology (NYIT)",
+        "link": "https://www.nyit.edu/"
+      },
+      {
+        "name": "SUNY Empire State",
+        "link": "https://sunyempire.edu/lp/do-you/?utm_source=google&utm_medium=search&gad_source=1&gad_campaignid=22870822273&gbraid=0AAAAABKk9MWdAPUz8mes00mS_fyJ2QAis&gclid=Cj0KCQjw3K7RBhDJARIsAKRtP5SMAifTxoK3CtpGH0-D8ZAiwgodW1sasgLyV6fsLWc6abdEdgfKHzgaAluMEALw_wcB"
+      },
+      {
+        "name": "SUNY Farmingdale",
+        "link": "https://www.farmingdale.edu/"
+      },
+      {
+        "name": "SUNY Old Westbury",
+        "link": "https://www.oldwestbury.edu/"
+      }
+    ],
+    "Riverhead": [
+      {
+        "name": "LIU Riverhead",
+        "link": "https://liu.edu/riverhead"
+      },
+      {
+        "name": "Suffolk County Community College Eastern Campus",
+        "link": "https://www.sunysuffolk.edu/"
+      }
+    ],
+    "Southampton": [
+      {
+        "name": "Stony Brook University Southampton Campus",
+        "link": "https://www.stonybrook.edu/southampton/"
+      }
+    ]
+  },
   "categories": [
     {
       "name": "NYSERDA Clean Energy Communities Program",
@@ -1685,7 +1813,7 @@
     "SCHOOL_4A_CollegeEnvPrograms": "College Environmental Programs",
     "SCHOOL_4B_CollegeCleanEnergy": "College Clean Energy Programs",
     "SCHOOL_4C_CollegeEnvCourses": "College Environmental Courses",
-    "SCHOOL_4D_TotalColleges": "Total Colleges",
+    "SCHOOL_4D_TotalColleges": "Higher Institutions",
     "SCHOOL_4E_HS_EnvPrograms": "High School Environmental Programs",
     "SCHOOL_4F_HS_CleanEnergy": "High School Clean Energy Programs",
     "SCHOOL_4H_TotalHighSchools": "Total High Schools",
@@ -1730,7 +1858,7 @@
     "WORK_11L_YouthEmploymentPrograms": "Youth Employment Programs",
     "WORK_11M_WorkforceProgram": "Clean Energy Workforce Program",
     "WORK_11N_WorkforcePlan": "Workforce Plan",
-    "HOUSING_12B_RemediationBusinesses": "Remediation Businesses",
+    "HOUSING_12B_RemediationBusinesses": "Mold and Asbestos Removal Businesses",
     "HOUSING_12C_HomesNeedRoofRepair": "Homes Needing Roof Repair",
     "HOUSING_12E_FoodPantries": "Food Pantries",
     "HOUSING_12F_LegalRentals": "Legal Rental Units",
