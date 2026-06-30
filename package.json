@@ -1,0 +1,11 @@
+{
+  "name": "town-readiness-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python3 -m http.server 8772 -d outputs/liceh_dashboard_prototype",
+    "build": "python3 work/refine_liceh_dashboard.py",
+    "build:nationbuilder": "python3 scripts/create_nationbuilder_package.py"
+  }
+}

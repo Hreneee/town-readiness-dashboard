@@ -1,0 +1,134 @@
+<section id="town-readiness-dashboard-section" class="town-readiness-dashboard-section">
+  <div class="town-readiness-dashboard-main" role="region" aria-label="Town Readiness Assessment dashboard">
+<div class="dashboard-shell">
+    <nav class="section-nav" id="section-nav" aria-label="Dashboard sections">
+      <button class="active" data-view="overview" type="button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10.5V20h13v-9.5"></path><path d="M9.5 20v-5h5v5"></path></svg></span><span class="nav-label">Overview</span></button>
+      <button data-view="explorer" type="button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"></circle><path d="m16 16 4 4"></path></svg></span><span class="nav-label">Municipality Explorer</span></button>
+      <button data-view="methodology" type="button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 10v7"></path><path d="M12 7h.01"></path></svg></span><span class="nav-label">Sources</span></button>
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-controls="section-nav" aria-expanded="true" aria-label="Collapse navigation"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></span><span class="nav-label">Collapse menu</span></button>
+    </nav>
+    <div class="dashboard-content">
+      <!-- Looker Studio Page 1: Long Island Overview -->
+      <section id="overview" class="page active">
+        <div class="dashboard-purpose">
+          <h1>Town Readiness Assessment</h1>
+          <p>This dashboard helps Long Island residents, community groups, and local leaders see how towns and cities are preparing for a cleaner energy future. It brings together available information on local planning, New York State Energy Research and Development Authority (NYSERDA) Clean Energy Communities (CEC), New York State Department of Environmental Conservation (NYSDEC) Climate Smart Communities (CSC), Electric Vehicle (EV) charging, renewable energy goals, workforce resources, and more. <button class="info-tip" type="button" data-tooltip-title="NYSERDA" data-tooltip-value="NYSERDA is the New York State Energy Research and Development Authority. It supports energy efficiency, clean energy programs, funding opportunities, and technical assistance across New York State." aria-describedby="tip-nyserda-1" aria-label="NYSERDA information"><span aria-hidden="true">?</span><span id="tip-nyserda-1" class="sr-only">NYSERDA is the New York State Energy Research and Development Authority. It supports energy efficiency, clean energy programs, funding opportunities, and technical assistance across New York State.</span></button> <button class="info-tip" type="button" data-tooltip-title="Clean Energy Communities" data-tooltip-value="Clean Energy Communities (CEC) is a NYSERDA program that recognizes local governments for completing high-impact clean energy actions." aria-describedby="tip-cec-2" aria-label="Clean Energy Communities information"><span aria-hidden="true">?</span><span id="tip-cec-2" class="sr-only">Clean Energy Communities (CEC) is a NYSERDA program that recognizes local governments for completing high-impact clean energy actions.</span></button></p>
+          <p>Use this dashboard to explore documented progress, see where communities are building momentum, identify opportunities for growth, and learn from communities that have made notable strides. It is not an official ranking or audit, but a snapshot of selected clean energy readiness indicators. <button class="info-tip" type="button" data-tooltip-title="Readiness" data-tooltip-value="Readiness refers to documented signs that a municipality may be prepared to plan for, join, or expand clean energy programs." aria-describedby="tip-readiness-3" aria-label="Readiness information"><span aria-hidden="true">?</span><span id="tip-readiness-3" class="sr-only">Readiness refers to documented signs that a municipality may be prepared to plan for, join, or expand clean energy programs.</span></button></p>
+        </div>
+        <div class="why-indicators">
+          <h3>Why These Indicators Were Selected <button class="info-tip" type="button" data-tooltip-title="Indicator" data-tooltip-value="An indicator is one selected data point used to understand part of a municipality&#x27;s clean energy readiness." aria-describedby="tip-indicator-4" aria-label="Indicator information"><span aria-hidden="true">?</span><span id="tip-indicator-4" class="sr-only">An indicator is one selected data point used to understand part of a municipality&#x27;s clean energy readiness.</span></button></h3>
+          <p>These indicators were chosen because they show key pieces of local clean energy readiness: planning, program participation, infrastructure, renewable energy goals, and workforce support.</p>
+          <p>Together, they help tell a broader story about how each municipality is preparing for clean energy opportunities. No single indicator gives the full picture, so the dashboard should be read as a starting point for learning, comparison, and conversation.</p>
+        </div>
+        <h2>Long Island Overview</h2>
+        <div class="overview-lead">
+          <p class="overview-subheading">Across <span class="accent-number">15</span> municipalities assessed...</p>
+          <div class="grid kpis" id="overview-kpis"></div>
+        </div>
+        <div class="cec-overview-grid">
+          <div class="panel cec-ranking-card">
+            <h3>Municipality Ranking by NYSERDA CEC Points <button class="info-tip" type="button" data-tooltip-title="NYSERDA CEC Points" data-tooltip-value="NYSERDA CEC points are awarded for completed clean energy actions through the Clean Energy Communities program. They show documented participation, but they are not a complete rating of readiness." aria-describedby="tip-nyserda_cec_points-5" aria-label="NYSERDA CEC Points information"><span aria-hidden="true">?</span><span id="tip-nyserda_cec_points-5" class="sr-only">NYSERDA CEC points are awarded for completed clean energy actions through the Clean Energy Communities program. They show documented participation, but they are not a complete rating of readiness.</span></button></h3>
+            <p>Sorted highest to lowest.</p>
+            <div id="rank-chart" class="cec-ranking-chart"></div>
+            <div class="cec-legend" aria-label="Clean Energy Communities status legend">
+              <span><i class="designated"></i>Designated <button class="info-tip" type="button" data-tooltip-title="Designated" data-tooltip-value="The municipality has met the Clean Energy Communities designation requirements shown in the available data." aria-describedby="tip-designated-6" aria-label="Designated information"><span aria-hidden="true">?</span><span id="tip-designated-6" class="sr-only">The municipality has met the Clean Energy Communities designation requirements shown in the available data.</span></button></span>
+              <span><i class="in-progress"></i>In Progress <button class="info-tip" type="button" data-tooltip-title="In Progress" data-tooltip-value="The municipality has some documented CEC progress, but the available data does not show full designation." aria-describedby="tip-in_progress-7" aria-label="In Progress information"><span aria-hidden="true">?</span><span id="tip-in_progress-7" class="sr-only">The municipality has some documented CEC progress, but the available data does not show full designation.</span></button></span>
+              <span><i class="not-started"></i>Not Started <button class="info-tip" type="button" data-tooltip-title="Not Started" data-tooltip-value="The available data does not show documented CEC progress. This may mean no activity was found, or that information was not available during review." aria-describedby="tip-not_started-8" aria-label="Not Started information"><span aria-hidden="true">?</span><span id="tip-not_started-8" class="sr-only">The available data does not show documented CEC progress. This may mean no activity was found, or that information was not available during review.</span></button></span>
+            </div>
+          </div>
+          <div class="cec-side-stack">
+            <div class="panel cec-side-card cec-status-card">
+              <h3>Status Summary <button class="info-tip" type="button" data-tooltip-title="CEC Designation Status" data-tooltip-value="CEC designation status shows whether a municipality has met NYSERDA Clean Energy Communities requirements, is in progress, or has no documented progress in the available data." aria-describedby="tip-cec_designation_status-9" aria-label="CEC Designation Status information"><span aria-hidden="true">?</span><span id="tip-cec_designation_status-9" class="sr-only">CEC designation status shows whether a municipality has met NYSERDA Clean Energy Communities requirements, is in progress, or has no documented progress in the available data.</span></button></h3>
+              <div id="cec-status-summary"></div>
+            </div>
+            <div class="panel cec-side-card">
+              <h3>Distribution of CEC Points <button class="info-tip" type="button" data-tooltip-title="NYSERDA CEC Points" data-tooltip-value="NYSERDA CEC points are awarded for completed clean energy actions through the Clean Energy Communities program. They show documented participation, but they are not a complete rating of readiness." aria-describedby="tip-nyserda_cec_points-10" aria-label="NYSERDA CEC Points information"><span aria-hidden="true">?</span><span id="tip-nyserda_cec_points-10" class="sr-only">NYSERDA CEC points are awarded for completed clean energy actions through the Clean Energy Communities program. They show documented participation, but they are not a complete rating of readiness.</span></button></h3>
+              <p>How many municipalities fall within each scoring band.</p>
+              <div id="histogram" class="cec-distribution-chart"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Looker Studio Page 2: Municipality Explorer -->
+      <section id="explorer" class="page">
+        <h2>Municipality Explorer</h2>
+        <p class="section-intro explorer-intro">Select a municipality to explore its clean energy readiness profile. You can see what has been documented in areas such as planning, CEC/CSC program progress, renewable energy goals, EV charging, and workforce resources.</p>
+        <p class="section-intro explorer-intro">Use this section to ask: What progress is visible? Which areas appear strongest? Where might more public information, planning, or support be useful?</p>
+        <div class="municipality-selector-bar">
+          <label for="municipality-select"><strong>Municipality selector</strong></label>
+          <select id="municipality-select" aria-label="Select municipality"></select>
+        </div>
+        <div class="explorer-scroll">
+          <!-- Primary municipality context stays together so users see identity, summary indicators, map context, and ranking before detailed response tables. -->
+          <div class="explorer-primary-group">
+            <div class="explorer-summary-row">
+              <div id="municipality-profile-card" class="municipality-profile-card"></div>
+              <div class="planning-indicators" id="selected-kpis"></div>
+            </div>
+            <div class="profile-head">
+              <div class="map-panel" id="map-panel">
+                <iframe id="municipality-map" title="Selected municipality map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+              </div>
+              <div class="panel explorer-comparison-card">
+                <h3>Ranking by CEC Points: All Municipalities</h3>
+                <p id="explorer-comparison-subtitle"></p>
+                <div id="explorer-comparison-chart" class="explorer-comparison-chart"></div>
+              </div>
+            </div>
+          </div>
+          <div class="grid explorer-analysis">
+            <div class="panel">
+              <h3 class="nys-breakdown-heading">NYSERDA Points Breakdown <button class="info-tip" type="button" data-tooltip-title="NYSERDA CEC Points" data-tooltip-value="NYSERDA CEC points are awarded for completed clean energy actions through the Clean Energy Communities program. They show documented participation, but they are not a complete rating of readiness." aria-describedby="tip-nyserda_cec_points-11" aria-label="NYSERDA CEC Points information"><span aria-hidden="true">?</span><span id="tip-nyserda_cec_points-11" class="sr-only">NYSERDA CEC points are awarded for completed clean energy actions through the Clean Energy Communities program. They show documented participation, but they are not a complete rating of readiness.</span></button></h3>
+              <p>This chart shows documented NYSERDA&#x27;s CEC point categories from the assessment data. These points reflect clean energy actions completed, but they are only one part of the larger readiness picture.</p>
+              <div class="nys-detail-layout">
+                <div class="donut-wrap">
+                  <div id="donut" class="donut" role="img" aria-label="NYSERDA points breakdown donut chart"></div>
+                  <div id="donut-legend" class="legend"></div>
+                </div>
+                <div class="scroll nys-table-wrap"><table id="nys-points-table"></table></div>
+              </div>
+            </div>
+          </div>
+          <div class="section-block assessment-section">
+            <div id="category-sections"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Looker Studio Page 3: Sources -->
+      <section id="methodology" class="page">
+        <h2>Sources</h2>
+        <p class="section-intro methodology-intro">Information was collected through publicly available channels, including municipal websites, state program records, reports, planning documents, and other sources available during review. Because clean energy programs and public records can change over time, the dashboard should be viewed as a working snapshot based on available information.</p>
+        <p class="section-intro methodology-intro">Blank, unavailable, or not applicable responses are retained where present so reviewers can distinguish missing information from confirmed program activity.</p>
+        <div class="panel sources-panel">
+          <div class="sources-controls" aria-label="Source filters">
+            <div class="filter-field">
+              <label for="source-municipality-filter">Municipality</label>
+              <select id="source-municipality-filter" aria-label="Filter sources by municipality"></select>
+            </div>
+            <div class="filter-field">
+              <label for="source-category-filter">Category</label>
+              <select id="source-category-filter" aria-label="Filter sources by category"></select>
+            </div>
+          </div>
+          <p id="sources-summary" class="sources-summary" aria-live="polite"></p>
+          <div class="scroll sources-table-wrap">
+            <table id="sources-table" class="sources-table">
+              <thead>
+                <tr>
+                  <th>Municipality</th>
+                  <th>Category</th>
+                  <th>Source Name</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p id="sources-empty" class="sources-empty" hidden>No sources found for the selected filters.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+  </div>
+</section>

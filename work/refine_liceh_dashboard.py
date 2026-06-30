@@ -1,0 +1,2006 @@
+from __future__ import annotations
+
+import csv
+import json
+import re
+from html import escape
+from pathlib import Path
+from statistics import mean
+
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE_CSV = ROOT / "data/master-dashboard-data.csv"
+SOURCES_CSV = ROOT / "data/source-documentation.csv"
+COPY_SOURCE = ROOT / "data/dashboard-copy.js"
+OUT = ROOT / "outputs/liceh_dashboard_prototype"
+OUT.mkdir(parents=True, exist_ok=True)
+
+TOOLTIP_KEY_MAP = {
+    "nyserda": "nyserda",
+    "cec": "cec",
+    "nyserda_cec_points": "nyserdaCecPoints",
+    "average_nyserda_points": "averageNyserdaPoints",
+    "cec_designation_status": "cecDesignationStatus",
+    "designated": "designated",
+    "in_progress": "inProgress",
+    "not_started": "notStarted",
+    "climate_action_plan": "climateActionPlan",
+    "renewable_energy_goal": "renewableEnergyGoal",
+    "ev_chargers": "evChargers",
+    "workforce_program": "workforceProgramAvailability",
+    "municipal_assessment_responses": "municipalAssessmentResponses",
+    "publicly_available_information": "publiclyAvailableInformation",
+    "missing_unavailable": "missingUnavailable",
+    "indicator": "indicator",
+    "readiness": "readiness",
+    "source_documentation": "sourceDocumentation",
+}
+
+
+def load_dashboard_copy(path):
+    text = path.read_text(encoding="utf-8")
+    match = re.search(r"export\s+const\s+dashboardCopy\s*=\s*(\{.*\})\s*;", text, re.S)
+    if not match:
+        raise ValueError(f"Could not find dashboardCopy export in {path}")
+    return json.loads(match.group(1))
+
+
+dashboard_copy = load_dashboard_copy(COPY_SOURCE)
+TOOLTIP_TEXT = {legacy: dashboard_copy["tooltips"][modern] for legacy, modern in TOOLTIP_KEY_MAP.items()}
+
+_tip_counter = 0
+
+
+def info_tip(key, label="More information"):
+    global _tip_counter
+    _tip_counter += 1
+    text = TOOLTIP_TEXT[key]
+    tip_id = f"tip-{key}-{_tip_counter}"
+    return (
+        f'<button class="info-tip" type="button" data-tooltip-title="{escape(label)}" '
+        f'data-tooltip-value="{escape(text)}" aria-describedby="{tip_id}" '
+        f'aria-label="{escape(label)} information">'
+        f'<span aria-hidden="true">?</span><span id="{tip_id}" class="sr-only">{escape(text)}</span></button>'
+    )
+
+
+def clean_value(value):
+    if value is None:
+        return ""
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
+
+def as_number(value):
+    try:
+        if value in ("", None, "N/A"):
+            return 0
+        return float(value)
+    except Exception:
+        return 0
+
+
+def yes(value):
+    return str(value).strip().lower() == "yes"
+
+
+def present(value):
+    text = str(value).strip().lower()
+    return text not in {"", "no", "n/a", "not participating", "no goal", "0"}
+
+
+def clean_text(value):
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def parse_source_rows(path):
+    if not path.exists():
+        return []
+    rows = []
+    with path.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            cleaned = {clean_text(key): clean_text(value) for key, value in row.items() if key is not None}
+            if not any(cleaned.values()):
+                continue
+            source_name = cleaned.get("Source Name") or cleaned.get("Source") or ""
+            url = cleaned.get("URL") or cleaned.get("Link") or ""
+            if not source_name and not url:
+                continue
+            rows.append({
+                "municipality": cleaned.get("Municipality") or cleaned.get("Town") or "",
+                "category": cleaned.get("Category", ""),
+                "sourceName": source_name,
+                "url": url,
+            })
+    return rows
+
+
+def parse_higher_institutions(value):
+    institutions = []
+    for item in str(value or "").split(";"):
+        item = item.strip()
+        if not item:
+            continue
+        name, sep, link = item.partition("|")
+        institutions.append({"name": name.strip(), "link": link.strip() if sep else ""})
+    return institutions
+
+
+def friendly_field(field):
+    replacements = [
+        ("NYSERDA_1A_", "Benchmarking: "),
+        ("NYSERDA_1B_", "Build Ready Program: "),
+        ("NYSERDA_1C_", "Renewable Energy: "),
+        ("NYSERDA_1D_", "Municipal Building Demonstration: "),
+        ("NYSERDA_1E_", "LED Streetlights: "),
+        ("NYSERDA_1F_", "Thermal Energy Networks: "),
+        ("NYSERDA_1G_", "Community Campaigns: "),
+        ("NYSERDA_1H_", "County-hosted Trainings: "),
+        ("NYSERDA_1I_", "Energy Code Training: "),
+        ("NYSERDA_1J_", "Climate Smart Communities Certification: "),
+        ("NYSERDA_1K_", "Community Choice Aggregation: "),
+        ("NYSERDA_1L_", "Green Financing: "),
+        ("NYSERDA_1M_", "Clean Fleets: "),
+        ("NYSERDA_1N_", "Electric Landscaping Requirement: "),
+        ("NYSERDA_1O_", "Municipal Fleet Inventory: "),
+        ("NYSERDA_1P_", "Unified Solar Permit: "),
+        ("NYSERDA_1Q_", "Clean Energy Community Designation: "),
+        ("NYSERDA_1R_", "Clean Energy Community Star Designation: "),
+        ("CSC_2_", "Climate Smart Communities: "),
+        ("CLIMATE_3A_", "Formal Climate Action Plan: "),
+        ("CLIMATE_3B_", "Informal Climate Planning: "),
+        ("CLIMATE_3C_", "Climate Plan Updated: "),
+        ("CLIMATE_3E_", "Environmental Justice: "),
+        ("CLIMATE_3G_", "Energy Plan: "),
+        ("CLIMATE_3H_", "Climate Code: "),
+        ("CLIMATE_3I_", "Renewable Energy Code: "),
+        ("CLIMATE_3J_", "Renewable Moratorium: "),
+        ("CLIMATE_3K_", "EV Code: "),
+        ("SCHOOL_4", "School "),
+        ("GOV_5", "Municipal Government "),
+        ("ENERGY_6", "Energy "),
+        ("BUILD_7", "Buildings "),
+        ("EV_8", "Transportation and EV "),
+        ("GREEN_9", "Community Organizations "),
+        ("POLICY_10", "Policy "),
+        ("WORK_11", "Workforce "),
+        ("HOUSING_12", "Housing and Community Resources "),
+    ]
+    text = field
+    for old, new in replacements:
+        text = text.replace(old, new)
+    words = []
+    for part in text.replace("_", " ").split():
+        if part in {"EV", "NGO", "GHG", "LEED", "PACE", "CSC", "NYSERDA"}:
+            words.append(part)
+        else:
+            words.append(part)
+    label = " ".join(words)
+    label = label.replace("TotalEVs", "Total Electric Vehicles")
+    label = label.replace("NGOCount", "NGO Count")
+    label = label.replace("TransitLines", "Public Transportation Lines")
+    label = label.replace("TransitUsers", "Public Transportation Users")
+    label = label.replace("GovChargers", "Government Chargers")
+    label = label.replace("PublicChargers", "Public EV Chargers")
+    label = label.replace("RenewableGoal", "Renewable Energy Goal")
+    label = label.replace("FormalPlan", "Formal Climate Action Plan")
+    return " ".join(label.split())
+
+
+records = []
+with SOURCE_CSV.open(newline="", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    headers = [h for h in (reader.fieldnames or []) if h]
+    for row in reader:
+        rec = {header: clean_value(row.get(header, "")) for header in headers}
+        if not clean_text(rec.get("Municipality")):
+            continue
+        records.append(rec)
+
+nys_point_fields = [h for h in headers if h.startswith("NYSERDA_1") and h.split("_")[1][-1] <= "P"]
+nys_max_points = {
+    "NYSERDA_1A_Benchmarking": 1800,
+    "NYSERDA_1B_BuildReady": 800,
+    "NYSERDA_1C_RenewableEnergy": 4600,
+    "NYSERDA_1D_BuildingDemo": 4100,
+    "NYSERDA_1E_LEDStreetlights": 900,
+    "NYSERDA_1F_ThermalNetworks": 1000,
+    "NYSERDA_1G_CommunityCampaigns": 3800,
+    "NYSERDA_1H_Trainings": 1200,
+    "NYSERDA_1I_CodeTraining": 300,
+    "NYSERDA_1J_CSC_Certification": 1400,
+    "NYSERDA_1K_CCA": 2000,
+    "NYSERDA_1L_GreenFinancing": 1000,
+    "NYSERDA_1M_CleanFleets": 6700,
+    "NYSERDA_1N_ElectricLandscaping": 200,
+    "NYSERDA_1O_FleetInventory": 200,
+    "NYSERDA_1P_SolarPermit": 200,
+}
+
+higher_institutions = {}
+for rec in records:
+    higher_institutions[rec["Municipality"]] = parse_higher_institutions(rec.get("Higher Institutions"))
+
+source_rows = parse_source_rows(SOURCES_CSV)
+
+for rec in records:
+    rec["NYSERDA_Total"] = int(sum(as_number(rec.get(field)) for field in nys_point_fields))
+    rec["Climate Smart Community Status"] = rec.get("CSC_2_Designation", "")
+    rec["Climate Action Plan Status"] = "Yes" if yes(rec.get("CLIMATE_3A_FormalPlan")) else "No"
+    rec["Renewable Energy Goal Status"] = rec.get("ENERGY_6N_RenewableGoal", "")
+    rec["Public EV Chargers"] = int(as_number(rec.get("EV_8F_PublicChargers")))
+    rec["Public Transportation Lines"] = int(as_number(rec.get("EV_8I_TransitLines")))
+    rec["Environmental, Climate, and Sustainability NGO Count"] = int(as_number(rec.get("GREEN_9F_NGOCount")))
+
+records = sorted(records, key=lambda r: r["Municipality"])
+climate_plan_count = sum(1 for r in records if yes(r.get("CLIMATE_3A_FormalPlan")))
+renewable_goal_count = sum(1 for r in records if present(r.get("ENERGY_6N_RenewableGoal")))
+informal_plan_yes = sum(1 for r in records if yes(r.get("CLIMATE_3B_InformalPlan")))
+informal_plan_no = len(records) - informal_plan_yes
+public_ev_total = sum(r["Public EV Chargers"] for r in records)
+workforce_program_count = sum(1 for r in records if yes(r.get("WORK_11M_WorkforceProgram")))
+youth_program_count = sum(1 for r in records if as_number(r.get("WORK_11L_YouthEmploymentPrograms")) > 0)
+overview = {
+    "totalMunicipalities": len(records),
+    "averageNYSERDAPoints": round(mean(r["NYSERDA_Total"] for r in records), 1),
+    "climateSmartParticipants": sum(1 for r in records if present(r.get("CSC_2_Designation"))),
+    "climateActionPlans": climate_plan_count,
+    "climateActionPlanFraction": f"{climate_plan_count}/{len(records)}",
+    "climateActionPlanPercent": round(climate_plan_count / len(records) * 100),
+    "renewableEnergyGoals": renewable_goal_count,
+    "renewableEnergyGoalFraction": f"{renewable_goal_count}/{len(records)}",
+    "renewableEnergyGoalPercent": round(renewable_goal_count / len(records) * 100),
+    "publicEVChargers": public_ev_total,
+    "averagePublicEVChargers": round(public_ev_total / len(records), 1),
+    "informalPlanningYes": informal_plan_yes,
+    "informalPlanningNo": informal_plan_no,
+    "informalPlanningFraction": f"{informal_plan_yes}/{len(records)}",
+    "informalPlanningPercent": round(informal_plan_yes / len(records) * 100),
+    "cleanEnergyWorkforcePrograms": workforce_program_count,
+    "cleanEnergyWorkforceProgramFraction": f"{workforce_program_count}/{len(records)}",
+    "cleanEnergyWorkforceProgramPercent": round(workforce_program_count / len(records) * 100),
+    "youthEmploymentPrograms": youth_program_count,
+    "youthEmploymentProgramFraction": f"{youth_program_count}/{len(records)}",
+    "youthEmploymentProgramPercent": round(youth_program_count / len(records) * 100),
+}
+
+categories = [
+    ("NYSERDA Clean Energy Communities Program", [h for h in headers if h.startswith("NYSERDA_")]),
+    ("Climate Smart Communities", [h for h in headers if h.startswith("CSC_")]),
+    ("Climate Plans and Local Policies", [h for h in headers if h.startswith("CLIMATE_") or h.startswith("POLICY_")]),
+    ("Energy and Renewable Programs", [h for h in headers if h.startswith("ENERGY_")]),
+    ("Buildings", [h for h in headers if h.startswith("BUILD_")]),
+    ("Transportation / EV Infrastructure", [h for h in headers if h.startswith("EV_")]),
+    ("Workforce Development", [h for h in headers if h.startswith("WORK_") or h.startswith("SCHOOL_")]),
+    ("Housing and Community Resources", [h for h in headers if h.startswith("HOUSING_")]),
+    ("Community Organizations", [h for h in headers if h.startswith("GREEN_") or h.startswith("GOV_")]),
+]
+
+field_labels = {h: friendly_field(h) for h in headers}
+public_labels = {
+    "NYSERDA_Total": "NYSERDA Clean Energy Communities Points",
+    "NYSERDA_1A_Benchmarking": "Benchmarking",
+    "NYSERDA_1B_BuildReady": "Build Ready Program",
+    "NYSERDA_1C_RenewableEnergy": "Renewable Energy",
+    "NYSERDA_1D_BuildingDemo": "Municipal Building Demonstration",
+    "NYSERDA_1E_LEDStreetlights": "LED Streetlights",
+    "NYSERDA_1F_ThermalNetworks": "Thermal Energy Networks",
+    "NYSERDA_1G_CommunityCampaigns": "Community Campaigns",
+    "NYSERDA_1H_Trainings": "County-Hosted Trainings",
+    "NYSERDA_1I_CodeTraining": "Energy Code Training",
+    "NYSERDA_1J_CSC_Certification": "Climate Smart Communities Certification",
+    "NYSERDA_1K_CCA": "Community Choice Aggregation",
+    "NYSERDA_1L_GreenFinancing": "Green Financing",
+    "NYSERDA_1M_CleanFleets": "Clean Fleets",
+    "NYSERDA_1N_ElectricLandscaping": "Electric Landscaping Requirement",
+    "NYSERDA_1O_FleetInventory": "Municipal Fleet Inventory",
+    "NYSERDA_1P_SolarPermit": "Unified Solar Permit",
+    "NYSERDA_1Q_Designation": "Clean Energy Community Designation",
+    "NYSERDA_1R_StarDesignation": "Clean Energy Community Star Level",
+    "CSC_2_Designation": "Climate Smart Communities Status",
+    "CLIMATE_3A_FormalPlan": "Formal Climate Action Plan",
+    "CLIMATE_3B_InformalPlan": "Informal Climate Planning",
+    "CLIMATE_3C_PlanUpdated": "Climate Plan Updated",
+    "CLIMATE_3E_EnvironmentalJustice": "Environmental Justice Included",
+    "CLIMATE_3G_EnergyPlan": "Energy Plan",
+    "CLIMATE_3H_CodeClimate": "Climate-Related Local Code",
+    "CLIMATE_3I_CodeRenewables": "Renewable Energy Local Code",
+    "CLIMATE_3J_RenewableMoratorium": "Renewable Energy Moratorium",
+    "CLIMATE_3K_EVCode": "Electric Vehicle Local Code",
+    "POLICY_10B_FinancialSupport": "Financial Support for Climate or Clean Energy Work",
+    "POLICY_10D_CouncilMembers": "Council Member Count",
+    "ENERGY_6A_GHGInventory": "Greenhouse Gas Inventory",
+    "ENERGY_6B_GovOnlyInventory": "Greenhouse Gas Inventory Scope",
+    "ENERGY_6C_Benchmarking": "Energy Benchmarking",
+    "ENERGY_6D_EnergyCode": "Energy Code Activity",
+    "ENERGY_6E_EfficiencyIncentives": "Energy Efficiency Incentives",
+    "ENERGY_6I_LargeSolar": "Large Solar Projects",
+    "ENERGY_6J_WindProjects": "Wind Projects",
+    "ENERGY_6L_PACE": "PACE Financing",
+    "ENERGY_6N_RenewableGoal": "Renewable Energy Goal",
+    "ENERGY_6O_RenewableIncentives": "Renewable Energy Incentives",
+    "BUILD_7A_GovLEED": "Government LEED Buildings",
+    "BUILD_7C_TotalLEED": "Leadership in Energy and Environmental Design (LEED) Buildings",
+    "BUILD_7E_LEEDPolicy": "LEED Policy",
+    "BUILD_7F_LEEDIncentives": "LEED Incentives",
+    "BUILD_7I_HeatPumpIncentives": "Heat Pump Incentives",
+    "EV_8C_GovChargers": "Government EV Chargers",
+    "EV_8D_TotalEVs": "Total Electric Vehicles",
+    "EV_8F_PublicChargers": "Public EV Chargers",
+    "EV_8G_EVAdoptionGoal": "EV Adoption Goal",
+    "EV_8H_EVIncentives": "EV Incentives",
+    "EV_8I_TransitLines": "Public Transportation Lines",
+    "EV_8J_TransitUsers": "Public Transportation Riders",
+    "SCHOOL_4A_CollegeEnvPrograms": "College Environmental Programs",
+    "SCHOOL_4B_CollegeCleanEnergy": "College Clean Energy Programs",
+    "SCHOOL_4C_CollegeEnvCourses": "College Environmental Courses",
+    "SCHOOL_4D_TotalColleges": "Higher Institutions",
+    "SCHOOL_4E_HS_EnvPrograms": "High School Environmental Programs",
+    "SCHOOL_4F_HS_CleanEnergy": "High School Clean Energy Programs",
+    "SCHOOL_4H_TotalHighSchools": "Total High Schools",
+    "WORK_11A_TradeUnions": "Trade Unions",
+    "WORK_11H_CommunityProjects": "Community Workforce Projects",
+    "WORK_11I_HousingShelters": "Housing Shelters",
+    "WORK_11K_WorkforceIncentives": "Workforce Incentives",
+    "WORK_11L_YouthEmploymentPrograms": "Youth Employment Programs",
+    "WORK_11M_WorkforceProgram": "Clean Energy Workforce Program",
+    "WORK_11N_WorkforcePlan": "Workforce Plan",
+    "HOUSING_12B_RemediationBusinesses": "Mold and Asbestos Removal Businesses",
+    "HOUSING_12C_HomesNeedRoofRepair": "Homes Needing Roof Repair",
+    "HOUSING_12E_FoodPantries": "Food Pantries",
+    "HOUSING_12F_LegalRentals": "Legal Rental Units",
+    "HOUSING_12G_EBTAcceptingMarkets": "EBT-Accepting Markets",
+    "HOUSING_12H_RepairCafes": "Repair Cafes",
+    "HOUSING_12I_HousingEvents": "Housing Events",
+    "HOUSING_12J_Section8Homes": "Section 8 Homes",
+    "GOV_5A_ClimateCommittee": "Municipal Climate Committee",
+    "GOV_5B_EnvironmentalCommittee": "Municipal Environmental Committee",
+    "GOV_5C_SustainabilityOffice": "Sustainability Office",
+    "GOV_5D_SustainabilityCoordinator": "Sustainability Coordinator",
+    "GREEN_9A_SustainabilityCommittee": "Community Sustainability Committee",
+    "GREEN_9B_SustainabilityPrograms": "Community Sustainability Programs",
+    "GREEN_9C_GreenJobsPrograms": "Green Jobs Programs",
+    "GREEN_9E_GreenIncentives": "Green Incentives",
+    "GREEN_9F_NGOCount": "Environmental, Climate, and Sustainability Organizations",
+    "GREEN_9H_ClimateEvents": "Climate Events",
+    "Climate Smart Community Status": "Climate Smart Communities Status",
+    "Climate Action Plan Status": "Climate Action Plan",
+    "Renewable Energy Goal Status": "Renewable Energy Goal",
+    "Public EV Chargers": "Public EV Chargers",
+    "Public Transportation Lines": "Public Transportation Lines",
+    "Environmental, Climate, and Sustainability NGO Count": "Environmental, Climate, and Sustainability Organizations",
+}
+field_labels.update(public_labels)
+data = {
+    "overview": overview,
+    "records": records,
+    "nysPointFields": nys_point_fields,
+    "nysMaxPoints": nys_max_points,
+    "higherInstitutions": higher_institutions,
+    "sources": source_rows,
+    "categories": [{"name": name, "fields": fields} for name, fields in categories],
+    "displayCategories": [
+        {"name": "EV Infrastructure" if name == "Transportation / EV Infrastructure" else name, "fields": [
+            field for field in fields
+            if field not in {"EV_8I_TransitLines", "WORK_11N_WorkforcePlan"}
+        ]}
+        for name, fields in categories
+        if name not in {
+            "NYSERDA Clean Energy Communities Program",
+            "Climate Smart Communities",
+            "Community Organizations",
+            "Climate Plans and Local Policies",
+        }
+    ],
+    "fieldLabels": field_labels,
+}
+
+with (OUT / "dashboard_data.json").open("w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2)
+
+csv_headers = headers + [
+    "NYSERDA_Total",
+    "Climate Smart Community Status",
+    "Climate Action Plan Status",
+    "Renewable Energy Goal Status",
+    "Public EV Chargers",
+    "Public Transportation Lines",
+    "Environmental, Climate, and Sustainability NGO Count",
+]
+csv_headers = list(dict.fromkeys(csv_headers))
+with (OUT / "liceh_looker_studio_data_source.csv").open("w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=csv_headers)
+    writer.writeheader()
+    for rec in records:
+        writer.writerow({h: rec.get(h, "") for h in csv_headers})
+
+with (OUT / "calculated_fields_created.md").open("w", encoding="utf-8") as f:
+    f.write("# Calculated Fields Created\n\n")
+    f.write("## NYSERDA_Total\n\n")
+    f.write("Approved calculated field for this prototype. It sums the retained NYSERDA Clean Energy Communities point fields.\n\n")
+    f.write("```lookerstudio\n")
+    f.write(" +\n".join(nys_point_fields))
+    f.write("\n```\n\n")
+    f.write("No additional calculated comparison metrics are included.\n")
+
+visuals = [
+    ("Page 1 - Long Island Overview", "Regional scorecards with definitions for total municipalities, average NYSERDA points, Climate Smart Communities participation, climate action plans, renewable energy goals, and public EV chargers."),
+    ("Page 1 - Long Island Overview", "Compact NYSERDA_Total municipality ranking chart using actual NYSERDA_Total values."),
+    ("Page 1 - Long Island Overview", "NYSERDA_Total distribution chart showing municipality counts by point range."),
+    ("Page 2 - Municipality Explorer + Benchmarking", "Municipality selector controlling the full page."),
+    ("Page 2 - Municipality Explorer + Benchmarking", "Map placeholder for selected municipality context."),
+    ("Page 2 - Municipality Explorer + Benchmarking", "Selected municipality profile and key metrics using retained source responses and NYSERDA_Total."),
+    ("Page 2 - Municipality Explorer + Benchmarking", "NYSERDA points breakdown donut using only actual NYSERDA point fields."),
+    ("Page 2 - Municipality Explorer + Benchmarking", "Ranking/benchmarking widget with metric toggles for approved source fields and NYSERDA_Total."),
+    ("Page 2 - Municipality Explorer + Benchmarking", "Retained assessment response sections by category with public-friendly labels."),
+    ("Page 2 - Municipality Explorer + Benchmarking", "Resource listings placeholder for organization and program review."),
+    ("Page 3 - Methodology / Data Notes", "Plain-language method sections, limitations, missing/approximate value handling, and source documentation placeholder."),
+]
+with (OUT / "visualizations_created.md").open("w", encoding="utf-8") as f:
+    f.write("# Visualizations Created\n\n")
+    for page, detail in visuals:
+        f.write(f"- **{page}:** {detail}\n")
+
+with (OUT / "backlog.md").open("w", encoding="utf-8") as f:
+    f.write("# LICEH Dashboard Backlog\n\n")
+    f.write("## Information Already Visible in the Dashboard\n\n")
+    for item in [
+        "All retained assessment response fields are visible in the Municipality Explorer by category.",
+        "NYSERDA_Total is shown as the only approved calculated field.",
+        "Regional KPIs, NYSERDA point ranking, NYSERDA point distribution, selected municipality metrics, NYSERDA point breakdown, and benchmarking controls are included.",
+        "Resource listing space is reserved for municipality-specific organizations and programs.",
+        "Methodology and data notes include source, standardization, missing value, approximate value, limitation, and future documentation placeholders.",
+    ]:
+        f.write(f"- {item}\n")
+    f.write("\n## Information Requiring Additional Calculations\n\n")
+    for item in [
+        "Per-capita or per-household comparisons if population or household counts are added.",
+        "Time-series changes once future assessment years are appended.",
+        "Formal rank tie-handling rules for nonnumeric status indicators if stakeholders want status ranking to be more than grouped comparison.",
+    ]:
+        f.write(f"- {item}\n")
+    f.write("\n## Information Requiring Additional Data\n\n")
+    for item in [
+        "Municipality boundary data or coordinates for a real map.",
+        "Cleaned organization and program names for resource listings.",
+        "Field-level source URLs, collection dates, and confidence notes.",
+        "Population, households, municipal type, county, and demographic context for normalized benchmarking.",
+    ]:
+        f.write(f"- {item}\n")
+    f.write("\n## Future Enhancement Opportunities\n\n")
+    for item in [
+        "Gradually remove retained fields that stakeholders determine are unclear, redundant, or not useful for public display.",
+        "Add Looker Studio filter controls for county, municipality type, and assessment year when those fields become available.",
+        "Link the full source documentation spreadsheet when finalized.",
+        "Create municipality one-page export views after the field list is approved.",
+    ]:
+        f.write(f"- {item}\n")
+
+html = f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Town Readiness Assessment</title>
+  <style>
+    :root {{
+      --font-family-base: Arial, Helvetica, sans-serif;
+      --font-size-xs: 12px;
+      --font-size-sm: 13px;
+      --font-size-md: 15px;
+      --font-size-lg: 18px;
+      --font-size-xl: 24px;
+      --font-size-2xl: 30px;
+      --font-weight-regular: 400;
+      --font-weight-medium: 600;
+      --font-weight-bold: 700;
+      --font-weight-heavy: 800;
+      --color-ink: #1f2f2f;
+      --color-muted: #5f6f6b;
+      --color-surface: #ffffff;
+      --color-page: #f4f7f4;
+      --color-line: #cad6d1;
+      --color-primary: #1f6fa9;
+      --color-accent: #6d7f8f;
+      --color-soft: #eef4f8;
+      --status-success-bg: #e7f3ea;
+      --status-success-text: #225b33;
+      --status-warning-bg: #f6efd8;
+      --status-warning-text: #6b541b;
+      --status-neutral-bg: #eef1f0;
+      --status-neutral-text: #475653;
+      --status-info-bg: #e8f1f5;
+      --status-info-text: #24536b;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --radius-none: 0;
+      --radius-sm: 2px;
+      --radius-md: 4px;
+      --shadow-card: 0 1px 2px rgba(31, 47, 47, 0.08);
+      --shadow-raised: 0 8px 20px rgba(31, 47, 47, 0.08);
+      --card-bg: var(--color-surface);
+      --card-border: 1px solid var(--color-line);
+      --card-radius: var(--radius-none);
+      --card-padding: var(--space-4);
+      --card-shadow: var(--shadow-card);
+      --section-gap: var(--space-5);
+      --section-gap-lg: var(--space-6);
+    }}
+    * {{ box-sizing:border-box; }}
+    body {{ margin:0; background:var(--color-page); color:var(--color-ink); font-family:var(--font-family-base); font-size:var(--font-size-md); line-height:1.5; }}
+    header {{ background:var(--color-surface); border-bottom:4px solid var(--color-primary); box-shadow:var(--shadow-card); padding:var(--space-5) var(--space-6); }}
+    .brand-row {{ display:flex; gap:var(--space-4); align-items:center; justify-content:space-between; max-width:1320px; margin:0 auto; }}
+    .brand-lockup {{ display:flex; gap:var(--space-4); align-items:center; min-width:0; }}
+    .org-name {{ margin:0 0 var(--space-1); color:var(--color-primary); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); text-transform:uppercase; letter-spacing:.04em; }}
+    h1 {{ margin:0 0 var(--space-3); font-size:var(--font-size-2xl); font-weight:var(--font-weight-heavy); letter-spacing:0; line-height:1.15; }}
+    h2 {{ margin:0 0 var(--space-4); font-size:var(--font-size-xl); font-weight:var(--font-weight-heavy); line-height:1.2; }}
+    h3 {{ margin:0 0 var(--space-3); font-size:var(--font-size-lg); font-weight:var(--font-weight-bold); line-height:1.25; }}
+    p {{ margin:0 0 var(--space-3); color:var(--color-muted); }}
+    label {{ display:block; margin-bottom:var(--space-2); color:var(--color-ink); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }}
+    a {{ color:var(--color-primary); }}
+    .section-nav {{ align-self:start; position:sticky; top:var(--space-4); display:grid; gap:var(--space-2); background:var(--color-surface); border:1px solid var(--color-line); box-shadow:var(--shadow-card); padding:var(--space-3); }}
+    .section-nav a {{ border-left:3px solid transparent; color:var(--color-ink); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); padding:var(--space-2); text-decoration:none; }}
+    .section-nav a:hover, .section-nav a:focus-visible {{ border-left-color:var(--color-primary); background:var(--color-soft); outline:none; }}
+    select, .toggle button {{ border:1px solid var(--color-line); background:var(--color-surface); color:var(--color-ink); padding:10px 13px; border-radius:var(--radius-sm); font-family:var(--font-family-base); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); cursor:pointer; transition:background-color .15s ease, border-color .15s ease, color .15s ease; }}
+    select:hover, .toggle button:hover {{ border-color:var(--color-primary); }}
+    select:focus-visible, .toggle button:focus-visible, summary:focus-visible, a:focus-visible {{ outline:3px solid var(--color-accent); outline-offset:2px; }}
+    .toggle button.active {{ background:var(--color-primary); border-color:var(--color-primary); color:var(--color-surface); }}
+    select {{ min-width:280px; max-width:100%; }}
+    .municipality-selector-bar {{ align-items:end; background:rgba(250,251,252,.94); border:1px solid rgba(8,73,167,.08); border-radius:var(--card-radius); box-shadow:0 10px 24px rgba(16,24,40,.08); display:flex; flex-wrap:wrap; gap:var(--space-3); margin:var(--space-4) 0; padding:var(--space-3); }}
+    .municipality-selector-bar label {{ margin:0; }}
+    .municipality-selector-bar select {{ background:var(--color-surface); min-width:300px; }}
+    .explorer-scroll {{ max-height:calc(100vh - 190px); overflow-y:auto; padding:0 var(--space-2) 72px 0; scrollbar-gutter:stable; }}
+    main {{ max-width:1320px; margin:0 auto; padding:var(--space-5); }}
+    .dashboard-shell {{ display:grid; grid-template-columns:220px minmax(0,1fr); gap:var(--space-5); align-items:start; }}
+    .dashboard-content {{ min-width:0; }}
+    .page {{ display:block; scroll-margin-top:var(--space-5); margin-bottom:var(--section-gap-lg); }}
+    .section-intro {{ color:var(--color-muted); font-size:var(--font-size-md); max-width:900px; }}
+    .explorer-intro {{ max-width:none; width:100%; }}
+    .overview-intro {{ max-width:none; width:100%; }}
+    .overview-lead {{ display:grid; gap:0; margin-bottom:24px; }}
+    .overview-lead #overview-kpis {{ margin-bottom:0; }}
+    .overview-subheading {{ color:var(--color-ink); font-size:var(--font-size-lg); font-weight:var(--font-weight-bold); margin:var(--space-5) 0 var(--space-3); }}
+    .overview-subheading .accent-number {{ color:var(--color-primary); }}
+    .dashboard-purpose {{ margin-bottom:var(--space-5); }}
+    .dashboard-purpose h1 {{ color:var(--color-ink); font-size:28px; margin:0 0 var(--space-3); }}
+    .dashboard-purpose p, .why-indicators p, .methodology-intro {{ max-width:none; width:100%; }}
+    .why-indicators {{ margin-bottom:var(--space-5); }}
+    .why-indicators h3 {{ margin-bottom:var(--space-2); }}
+    .panel, .metric, .notice {{ background:var(--card-bg); border:var(--card-border); border-radius:var(--card-radius); box-shadow:var(--card-shadow); padding:var(--card-padding); }}
+    .panel {{ margin-bottom:0; min-width:0; }}
+    .notice {{ border-left:6px solid var(--color-primary); margin-bottom:var(--space-4); }}
+    .disclaimer {{ border-left-color:var(--color-accent); }}
+    .grid {{ display:grid; gap:var(--space-4); }}
+    .grid > * {{ min-width:0; }}
+    .kpis {{ grid-template-columns:repeat(5,minmax(130px,1fr)); gap:var(--space-3); margin:var(--space-4) 0 var(--section-gap); }}
+    .kpis .metric {{ display:flex; flex-direction:column; justify-content:center; min-height:112px; padding:var(--space-3); text-align:center; }}
+    .kpis .metric-title {{ order:2; margin-top:var(--space-2); }}
+    .kpis .metric-value {{ order:1; }}
+    .kpis .metric-note {{ order:3; margin-top:var(--space-1); }}
+    .kpis .metric-title {{ align-items:center; display:flex; justify-content:center; }}
+    .kpis .metric-value {{ text-align:center; }}
+    .selected-kpis {{ gap:var(--space-2); grid-template-columns:repeat(3,minmax(110px,1fr)); grid-auto-rows:1fr; height:390px; margin-bottom:0; }}
+    .selected-kpis .metric {{ align-content:start; display:grid; grid-template-rows:42px 36px 1fr; min-height:0; overflow:hidden; padding:6px; text-align:center; }}
+    .selected-kpis .metric-title {{ align-items:center; display:flex; font-size:10px; justify-content:center; line-height:1.18; min-height:0; }}
+    .selected-kpis .metric-value {{ align-items:center; display:flex; font-size:20px; justify-content:center; line-height:1; margin:0; }}
+    .selected-kpis .metric-meta {{ font-size:10px; line-height:1.08; margin-top:2px; text-align:center; }}
+    .selected-kpis .comparison-delta, .selected-kpis .comparison-rank {{ font-size:10px; line-height:1.08; }}
+    .two {{ grid-template-columns:1fr 1fr; }}
+    .wide-narrow {{ grid-template-columns:1.35fr .65fr; }}
+    .overview-charts {{ grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr); align-items:stretch; }}
+    .overview-charts .panel {{ display:flex; flex-direction:column; height:380px; min-height:0; }}
+    .overview-charts .compact-chart {{ columns:1; }}
+    .overview-charts #rank-chart {{ column-count:auto; column-width:auto; columns:auto; flex:1; min-height:0; overflow-x:hidden; overflow-y:auto; padding-right:var(--space-2); scrollbar-gutter:stable; }}
+    .overview-charts #rank-chart .bar-row {{ grid-template-columns:minmax(130px,210px) minmax(80px,1fr) 64px; }}
+    .overview-charts #rank-chart .bar-row {{ break-inside:auto; }}
+    .overview-charts #rank-chart .bar-label {{ overflow-wrap:anywhere; }}
+    .metric-title {{ color:var(--color-muted); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); min-height:36px; }}
+    .metric-value {{ color:var(--color-primary); font-size:var(--font-size-2xl); font-weight:var(--font-weight-heavy); line-height:1.1; margin:var(--space-2) 0; overflow-wrap:anywhere; }}
+    .metric-note {{ color:var(--color-muted); font-size:var(--font-size-xs); margin:0; }}
+    .metric-meta {{ display:grid; gap:var(--space-1); }}
+    .comparison-delta {{ display:block; font-size:var(--font-size-xs); font-weight:var(--font-weight-heavy); }}
+    .comparison-delta.above {{ color:#1f7a43; }}
+    .comparison-delta.below {{ color:#b42318; }}
+    .comparison-delta.neutral {{ color:var(--color-muted); }}
+    .comparison-rank {{ display:block; color:var(--color-muted); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); }}
+    .bar-row {{ display:grid; grid-template-columns:minmax(160px,240px) 1fr 72px; gap:var(--space-3); align-items:center; margin:var(--space-2) 0; }}
+    .bar-label {{ font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }}
+    .bar-track {{ background:var(--color-soft); height:16px; border:1px solid var(--color-line); border-radius:var(--radius-sm); overflow:hidden; }}
+    .bar-fill {{ background:var(--color-primary); height:100%; min-width:2px; }}
+    .bar-value {{ text-align:right; font-weight:var(--font-weight-bold); font-variant-numeric:tabular-nums; }}
+    .compact-chart {{ columns:2; column-gap:var(--space-5); }}
+    .compact-chart .bar-row {{ break-inside:avoid; grid-template-columns:minmax(132px,190px) 1fr 64px; }}
+    .hist {{ display:flex; align-items:flex-end; gap:var(--space-2); height:220px; border-left:1px solid var(--color-line); border-bottom:1px solid var(--color-line); padding:var(--space-2); }}
+    .hist-bin {{ flex:1; min-width:54px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:var(--space-2); height:100%; }}
+    .hist-bar {{ width:100%; background:var(--color-primary); min-height:2px; border-radius:var(--radius-sm) var(--radius-sm) 0 0; }}
+    .hist-count {{ color:var(--color-primary); font-weight:var(--font-weight-heavy); }}
+    .hist-label {{ color:var(--color-muted); font-size:var(--font-size-xs); min-height:34px; text-align:center; }}
+    .profile-head {{ display:grid; grid-template-columns:minmax(320px,.95fr) minmax(420px,1.05fr); gap:var(--space-5); align-items:stretch; margin:var(--space-4) 0; }}
+    .map-placeholder {{ min-height:230px; background:repeating-linear-gradient(45deg, var(--color-soft), var(--color-soft) 10px, var(--color-page) 10px, var(--color-page) 20px); border:1px solid var(--color-line); box-shadow:var(--shadow-card); display:flex; align-items:center; justify-content:center; text-align:center; padding:var(--space-4); color:var(--color-muted); font-weight:var(--font-weight-bold); }}
+    .map-panel {{ min-height:390px; background:var(--color-soft); border:1px solid var(--color-line); box-shadow:var(--shadow-card); overflow:hidden; position:relative; }}
+    .map-panel iframe {{ width:100%; height:390px; border:0; display:block; background:var(--color-soft); }}
+    .map-fallback {{ margin:0; padding:var(--space-3); color:var(--color-muted); font-size:var(--font-size-xs); background:var(--color-surface); border-top:1px solid var(--color-line); }}
+    .donut-wrap {{ display:grid; grid-template-columns:220px 1fr; gap:var(--space-4); align-items:center; }}
+    .nys-detail-layout {{ align-items:start; display:grid; gap:20px; grid-template-columns:minmax(320px,.8fr) minmax(420px,1.2fr); margin-top:18px; }}
+    .nys-detail-layout .donut-wrap {{ grid-template-columns:220px minmax(180px,1fr); margin:0; }}
+    .nys-detail-layout .nys-table-wrap {{ margin-top:0; max-height:240px; }}
+    .donut {{ width:210px; height:210px; border-radius:50%; border:1px solid var(--color-line); background:conic-gradient(var(--color-primary) 0deg, var(--color-primary) 1deg, var(--color-soft) 1deg); position:relative; box-shadow:var(--shadow-card); }}
+    .donut::after {{ content:""; position:absolute; inset:54px; background:var(--color-surface); border:1px solid var(--color-line); border-radius:50%; }}
+    .donut-label {{ background:rgba(255,255,255,.94); border:1px solid rgba(26,38,64,.18); border-radius:999px; color:#1A2640; font-size:11px; font-weight:var(--font-weight-heavy); left:50%; line-height:1; min-width:32px; padding:4px 6px; pointer-events:none; position:absolute; text-align:center; text-shadow:none; top:50%; transform:translate(-50%, -50%); z-index:1; }}
+    .legend {{ display:grid; gap:var(--space-2); max-height:260px; overflow:auto; }}
+    .legend-item {{ display:grid; grid-template-columns:14px 1fr auto; gap:var(--space-2); align-items:center; font-size:var(--font-size-sm); }}
+    .swatch {{ width:14px; height:14px; border:1px solid var(--color-surface); border-radius:var(--radius-sm); }}
+    table {{ width:100%; border-collapse:collapse; font-size:var(--font-size-sm); }}
+    th, td {{ text-align:left; vertical-align:top; padding:10px var(--space-3); border-bottom:1px solid var(--color-line); }}
+    th {{ background:var(--color-soft); color:var(--color-ink); font-weight:var(--font-weight-bold); }}
+    tbody tr:nth-child(even) {{ background:var(--color-page); }}
+    .scroll {{ overflow:auto; max-height:520px; border:1px solid var(--color-line); }}
+    .category {{ margin-top:var(--space-6); }}
+    .category h3 {{ border-top:1px solid var(--color-line); padding-top:var(--space-5); }}
+    .category .content {{ background:transparent; padding:0; }}
+    .category-blurb {{ margin:0; }}
+    .education-institutions {{ align-items:start; display:grid; gap:var(--space-4); grid-template-columns:minmax(160px,220px) minmax(240px,1fr); }}
+    .institution-list {{ background:var(--color-surface); border:1px solid var(--color-line); padding:var(--space-3); }}
+    .institution-list h5 {{ color:var(--color-ink); font-size:var(--font-size-sm); font-weight:var(--font-weight-heavy); margin:0 0 var(--space-2); }}
+    .institution-links {{ display:grid; gap:var(--space-2); list-style:none; margin:0; padding:0; }}
+    .institution-links a {{ font-weight:var(--font-weight-bold); overflow-wrap:anywhere; }}
+    .resource-empty {{ color:var(--color-muted); margin:0; max-width:760px; }}
+    .method-section {{ margin-bottom:var(--section-gap); }}
+    .sources-controls {{ align-items:end; display:flex; flex-wrap:wrap; gap:var(--space-3); margin:var(--space-4) 0; }}
+    .sources-controls .filter-field {{ min-width:240px; }}
+    .sources-controls select {{ min-width:240px; width:100%; }}
+    .sources-summary {{ color:var(--color-muted); font-size:var(--font-size-sm); margin:0 0 var(--space-3); }}
+    .sources-table-wrap {{ max-height:620px; }}
+    .sources-table {{ table-layout:fixed; }}
+    .sources-table th:nth-child(1), .sources-table td:nth-child(1) {{ width:22%; }}
+    .sources-table th:nth-child(2), .sources-table td:nth-child(2) {{ width:24%; }}
+    .sources-table th:nth-child(3), .sources-table td:nth-child(3) {{ width:54%; }}
+    .sources-table a {{ color:var(--color-primary); font-weight:var(--font-weight-bold); overflow-wrap:anywhere; }}
+    .source-entry-note {{ color:var(--color-muted); display:block; font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); margin-top:2px; }}
+    .sources-empty {{ color:var(--color-muted); font-size:var(--font-size-md); margin:var(--space-4) 0 0; }}
+    .section-block {{ margin-top:var(--section-gap); }}
+    .benchmark-chart {{ margin-top:var(--space-3); }}
+    .nys-table-wrap {{ margin-top:var(--space-4); max-height:310px; }}
+    .status-pill {{ display:inline-block; border-radius:999px; padding:var(--space-1) var(--space-2); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); }}
+    .status-pill.success {{ background:var(--status-success-bg); color:var(--status-success-text); }}
+    .status-pill.warning {{ background:var(--status-warning-bg); color:var(--status-warning-text); }}
+    .status-pill.neutral {{ background:var(--status-neutral-bg); color:var(--status-neutral-text); }}
+    .status-pill.info {{ background:var(--status-info-bg); color:var(--status-info-text); }}
+    @media (max-width: 1000px) {{
+      header {{ position:static; }}
+      main {{ padding:var(--space-4); }}
+      .brand-row, .brand-lockup, .dashboard-shell {{ display:block; }}
+      .section-nav {{ position:static; margin-bottom:var(--space-4); }}
+      .kpis {{ grid-template-columns:repeat(5,minmax(110px,1fr)); }}
+      .selected-kpis, .two, .wide-narrow, .overview-charts, .profile-head, .donut-wrap {{ grid-template-columns:1fr; }}
+      .compact-chart {{ columns:1; }}
+      .hist {{ gap:var(--space-1); }}
+      .hist-bin {{ min-width:0; }}
+      .bar-row {{ grid-template-columns:1fr; gap:var(--space-1); }}
+      .bar-value {{ text-align:left; }}
+      h1 {{ font-size:var(--font-size-xl); }}
+    }}
+    :root {{
+      --color-primary:#0849A7;
+      --color-primary-dark:#05346f;
+      --color-primary-soft:#eaf3ff;
+      --color-primary-line:#c8dcf4;
+      --color-ink:#000000;
+      --color-muted:#475467;
+      --color-page:#FAFBFC;
+      --color-line:#e6edf4;
+      --color-soft:#f3f7fb;
+      --card-radius:14px;
+      --card-border:1px solid rgba(8,73,167,.08);
+      --card-shadow:0 8px 24px rgba(16, 24, 40, .06);
+      --shadow-card:0 8px 24px rgba(16, 24, 40, .06);
+      --shadow-raised:0 16px 40px rgba(16, 24, 40, .10);
+    }}
+    body {{ color:var(--color-ink); background:var(--color-page); line-height:1.58; overflow:hidden; }}
+    header {{ display:none; }}
+    main {{ max-width:none; margin:0 0 0 280px; padding:0; height:100vh; overflow:hidden; }}
+    body.nav-collapsed main {{ margin-left:64px; }}
+    .dashboard-shell {{ display:block; height:100%; }}
+    .dashboard-content {{ height:100vh; overflow:auto; padding:var(--space-6); }}
+    .section-nav {{ position:fixed; top:0; left:0; width:280px; height:100vh; align-content:start; background:#ffffff; border:0; border-right:1px solid var(--color-line); box-shadow:6px 0 24px rgba(16,24,40,.04); padding:var(--space-5) var(--space-4); z-index:10; }}
+    body.nav-collapsed .section-nav {{ width:64px; padding:var(--space-4) var(--space-2); }}
+    body.nav-collapsed .nav-label {{ display:none; }}
+    .nav-icon {{ align-items:center; display:inline-flex; flex:0 0 24px; height:24px; justify-content:center; line-height:1; width:24px; }}
+    .nav-icon svg {{ display:block; height:20px; stroke-width:2.2; width:20px; }}
+    .section-nav button {{ align-items:center; display:flex; gap:var(--space-2); }}
+    body.nav-collapsed .section-nav button {{ border-left-width:0; justify-content:center; padding:var(--space-3) var(--space-2); }}
+    .nav-toggle {{ margin-top:auto; }}
+    .nav-toggle .nav-icon {{ color:var(--color-primary); }}
+    .section-nav button {{ background:transparent; border:0; border-left:4px solid transparent; border-radius:12px; color:var(--color-muted); cursor:pointer; font-family:var(--font-family-base); font-size:var(--font-size-md); font-weight:var(--font-weight-bold); padding:var(--space-3); text-align:left; }}
+    .section-nav button.active, .section-nav button:hover, .section-nav button:focus-visible {{ background:var(--color-primary-soft); border-left-color:var(--color-primary); color:var(--color-primary-dark); outline:none; }}
+    .page {{ display:none; margin-bottom:0; }}
+    .page.active {{ display:block; }}
+    h2 {{ color:#101828; letter-spacing:0; margin-bottom:var(--space-5); }}
+    h3 {{ color:#101828; letter-spacing:0; margin-bottom:var(--space-4); }}
+    p {{ color:var(--color-muted); }}
+    .section-intro {{ color:var(--color-muted); line-height:1.65; }}
+    .panel, .metric, .notice, .map-panel, .category-metric, .progress-card, .detail-box {{ border-color:rgba(8,73,167,.08); border-radius:var(--card-radius); box-shadow:var(--card-shadow); }}
+    .panel {{ padding:var(--space-5); }}
+    .metric {{ background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%); }}
+    .metric-value, .category-metric-value, .progress-value, .hist-count {{ color:var(--color-primary); }}
+    .metric-title, .category-metric-title {{ color:#344054; }}
+    .metric-note, .metric-meta, .comparison-rank {{ color:var(--color-muted); }}
+    .bar-track, .progress-track {{ background:#f0f5fb; border-color:#dce8f5; }}
+    .bar-fill, .progress-fill, .hist-bar {{ background:linear-gradient(90deg,var(--color-primary) 0%,#1d64c8 100%); }}
+    .status-badge, .chip-badge {{ border-radius:999px; }}
+    .status-badge.yes {{ background:var(--color-primary-soft); border-color:var(--color-primary-line); color:var(--color-primary-dark); }}
+    .status-badge.no {{ background:#f7f8fa; border-color:#e7eaee; color:#5f6b7a; }}
+    .category h3 {{ border-top-color:#e8eef5; margin-top:var(--space-6); }}
+    .scroll {{ border-color:rgba(8,73,167,.10); border-radius:12px; }}
+    select {{ border-color:#d8e4f2; border-radius:12px; box-shadow:0 1px 2px rgba(16,24,40,.04); }}
+    .kpis {{ grid-template-columns:repeat(5,minmax(130px,1fr)); }}
+    .metric-note:empty {{ display:none; }}
+    .metric-title {{ min-height:auto; color:var(--color-ink); }}
+    .metric-meta {{ color:var(--color-muted); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); line-height:1.35; margin-top:var(--space-2); }}
+    .wide-narrow {{ grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr); }}
+    .overview-charts {{ grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr); align-items:stretch; }}
+    .overview-charts .panel {{ display:flex; flex-direction:column; height:380px; min-height:0; }}
+    .overview-charts .compact-chart {{ columns:1; }}
+    .overview-charts #rank-chart {{ column-count:auto; column-width:auto; columns:auto; flex:1; min-height:0; overflow-x:hidden; overflow-y:auto; padding-right:var(--space-2); scrollbar-gutter:stable; }}
+    .overview-charts #rank-chart .bar-row {{ grid-template-columns:minmax(130px,210px) minmax(80px,1fr) 64px; }}
+    .overview-charts #rank-chart .bar-row {{ break-inside:auto; }}
+    .overview-charts #rank-chart .bar-label {{ overflow-wrap:anywhere; }}
+    .compact-chart {{ columns:1; }}
+    .bar-row {{ grid-template-columns:minmax(120px,210px) minmax(90px,1fr) 70px; }}
+    .hist {{ width:100%; min-width:0; }}
+    .hist-bin {{ min-width:0; }}
+    .map-fallback {{ display:none; }}
+    .profile-head {{ grid-template-columns:minmax(320px,.95fr) minmax(420px,1.05fr); gap:var(--space-5); align-items:stretch; }}
+    .explorer-analysis {{ grid-template-columns:1fr; }}
+    .benchmark-panel {{ display:none; }}
+    .edu-pies {{ display:grid; gap:var(--space-4); grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); padding:var(--space-4); }}
+    .mini-pie-card {{ border:1px solid var(--color-line); padding:var(--space-3); }}
+    .mini-pie {{ width:92px; height:92px; border-radius:50%; background:conic-gradient(var(--color-primary) 0deg, var(--color-primary) 1deg, var(--color-soft) 1deg); margin-bottom:var(--space-2); }}
+    .mini-pie-label {{ font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }}
+    .mini-pie-value {{ color:var(--color-muted); font-size:var(--font-size-xs); }}
+    .category-dashboard {{ display:grid; gap:var(--space-4); padding:0; }}
+    .category-dashboard h4 {{ margin:0; color:var(--color-ink); font-size:var(--font-size-md); font-weight:var(--font-weight-heavy); }}
+    .category-blurb {{ margin-bottom:0; }}
+    .category-metrics {{ display:grid; gap:var(--space-3); grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }}
+    .category-metrics.compact-metrics {{ grid-template-columns:repeat(auto-fit,minmax(140px,180px)); justify-content:start; }}
+    .category-metric {{ background:var(--color-surface); border:1px solid var(--color-line); padding:var(--space-3); min-width:0; }}
+    .category-metric-title {{ font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); color:var(--color-muted); }}
+    .category-metric-value {{ color:var(--color-primary); font-size:var(--font-size-xl); font-weight:var(--font-weight-heavy); line-height:1.1; margin-top:var(--space-1); overflow-wrap:anywhere; }}
+    .comparison-stat {{ color:var(--color-muted); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); line-height:1.35; margin-top:var(--space-2); }}
+    .badge-grid {{ display:grid; gap:var(--space-2); grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }}
+    .indicator-card {{ align-items:center; display:flex; gap:var(--space-2); justify-content:space-between; min-width:0; padding:var(--space-1) 0; }}
+    .indicator-title {{ font-size:var(--font-size-sm); color:var(--color-ink); font-weight:var(--font-weight-bold); margin:0; }}
+    .status-badge, .chip-badge {{ display:inline-flex; align-items:center; gap:var(--space-1); border:1px solid var(--color-line); padding:var(--space-1) var(--space-2); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); background:var(--color-soft); color:var(--color-ink); white-space:nowrap; }}
+    .status-badge.yes {{ background:#eef6ff; border-color:#bfd7f2; color:var(--color-primary); }}
+    .status-badge.no {{ background:#f4f4f4; color:var(--color-muted); }}
+    .checklist {{ display:grid; gap:var(--space-2); grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }}
+    .check-row {{ display:flex; gap:var(--space-2); align-items:center; justify-content:space-between; padding:var(--space-1) 0; min-width:0; }}
+    .check-label {{ font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }}
+    .progress-grid {{ display:grid; gap:var(--space-3); grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }}
+    .progress-card {{ border:1px solid var(--color-line); padding:var(--space-3); background:var(--color-surface); }}
+    .progress-title {{ font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }}
+    .progress-value {{ color:var(--color-primary); font-size:var(--font-size-lg); font-weight:var(--font-weight-heavy); margin:var(--space-2) 0; }}
+    .progress-track {{ height:12px; background:var(--color-soft); border:1px solid var(--color-line); overflow:hidden; }}
+    .progress-fill {{ height:100%; background:var(--color-primary); }}
+    .detail-box {{ border:1px solid var(--color-line); background:var(--color-surface); }}
+    .detail-box summary {{ border:0; border-left:0; box-shadow:none; padding:var(--space-3); }}
+    .detail-box .detail-content {{ padding:0 var(--space-3) var(--space-3); color:var(--color-muted); font-size:var(--font-size-sm); }}
+    @media (max-width: 850px) {{
+      body {{ overflow:auto; }}
+      main {{ margin:0; height:auto; overflow:visible; }}
+      body.nav-collapsed main {{ margin-left:0; }}
+      .dashboard-content {{ height:auto; overflow:visible; padding:var(--space-4); }}
+      .section-nav {{ position:static; width:auto; height:auto; border-right:0; border-bottom:1px solid var(--color-line); }}
+      body.nav-collapsed .section-nav {{ display:grid; width:auto; padding:var(--space-4); }}
+      body.nav-collapsed .nav-label {{ display:none; }}
+      .kpis {{ grid-template-columns:repeat(5,minmax(110px,1fr)); }}
+      .wide-narrow, .overview-charts, .profile-head, .donut-wrap, .explorer-analysis, .education-institutions {{ grid-template-columns:1fr; }}
+      .explorer-scroll {{ max-height:none; overflow:visible; padding-right:0; }}
+      .selected-kpis {{ height:auto; grid-template-columns:repeat(2,minmax(140px,1fr)); }}
+      .overview-charts .panel {{ height:auto; min-height:0; }}
+      .overview-charts #rank-chart {{ max-height:none; overflow:visible; padding-right:0; }}
+      .overview-charts .compact-chart {{ columns:1; }}
+      .bar-row {{ grid-template-columns:104px minmax(76px,1fr) 58px; gap:var(--space-2); }}
+      .bar-label, .bar-value {{ font-size:var(--font-size-xs); }}
+      .hist-label {{ font-size:10px; }}
+    }}
+    @media (max-width: 520px) {{
+      .kpis {{ grid-template-columns:1fr; }}
+      .overview-charts .panel {{ min-height:0; }}
+      .overview-charts .compact-chart {{ columns:1; }}
+    }}
+    /* Reference design skin: colors, typography, spacing, and component styling only. */
+    :root {{
+      --font-family-base:'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-size-xs:12px;
+      --font-size-sm:13px;
+      --font-size-md:14px;
+      --font-size-lg:16px;
+      --font-size-xl:18px;
+      --font-size-2xl:30px;
+      --font-weight-regular:400;
+      --font-weight-medium:500;
+      --font-weight-bold:600;
+      --font-weight-heavy:600;
+      --color-ink:#1A2640;
+      --color-muted:#5C6B82;
+      --color-surface:#ffffff;
+      --color-page:#F2F5FA;
+      --color-line:#D8DEE9;
+      --color-primary:#074BA9;
+      --color-primary-dark:#053A83;
+      --color-primary-soft:#E8EDF7;
+      --color-primary-line:#B8CFF0;
+      --color-accent:#D0DEFA;
+      --color-soft:#EEF1F7;
+      --status-success-bg:#E7F4ED;
+      --status-success-text:#1A7A4A;
+      --status-warning-bg:#FEF3E2;
+      --status-warning-text:#B45309;
+      --status-neutral-bg:#F1F3F7;
+      --status-neutral-text:#5C6B82;
+      --status-info-bg:#E8F0FB;
+      --status-info-text:#074BA9;
+      --radius-sm:4px;
+      --radius-md:6px;
+      --card-radius:6px;
+      --card-border:1px solid var(--color-line);
+      --card-shadow:none;
+      --shadow-card:none;
+      --shadow-raised:0 8px 24px rgba(26,38,64,.08);
+      --card-padding:20px;
+    }}
+    html {{ font-size:16px; }}
+    body {{ background:var(--color-page); color:var(--color-ink); font-family:var(--font-family-base); font-size:var(--font-size-md); line-height:1.5; }}
+    main {{ margin-left:264px; }}
+    body.nav-collapsed main {{ margin-left:64px; }}
+    .dashboard-content {{ padding:32px 24px; }}
+    .section-nav {{ background:var(--color-primary); border:0; box-shadow:none; color:#ffffff; padding:0 24px 20px; width:264px; }}
+    body.nav-collapsed .section-nav {{ width:64px; padding:16px 8px; }}
+    .section-nav button {{ border:0; border-bottom:2px solid transparent; border-radius:0; color:rgba(255,255,255,.68); font-size:14px; font-weight:var(--font-weight-medium); padding:14px 10px; }}
+    .section-nav button.active, .section-nav button:hover, .section-nav button:focus-visible {{ background:transparent; border-bottom-color:#ffffff; color:#ffffff; }}
+    body.nav-collapsed .section-nav button {{ border-bottom-color:transparent; border-left:0; border-radius:6px; }}
+    body.nav-collapsed .section-nav button.active, body.nav-collapsed .section-nav button:hover {{ background:rgba(255,255,255,.14); }}
+    .nav-icon svg {{ height:18px; stroke-width:2; width:18px; }}
+    .nav-toggle {{ border-top:1px solid rgba(255,255,255,.15) !important; margin-top:auto; }}
+    .nav-toggle .nav-icon {{ color:#ffffff; }}
+    h2 {{ color:var(--color-ink); font-size:18px; font-weight:var(--font-weight-bold); line-height:1.5; margin:0 0 4px; }}
+    h3 {{ color:var(--color-ink); font-size:14px; font-weight:var(--font-weight-bold); line-height:1.5; margin:0 0 4px; }}
+    h4 {{ color:var(--color-ink); font-size:14px; font-weight:var(--font-weight-bold); line-height:1.5; }}
+    p, .section-intro {{ color:var(--color-muted); font-size:14px; line-height:1.6; }}
+    .overview-subheading {{ color:var(--color-ink); font-size:15px; font-weight:var(--font-weight-bold); margin:24px 0 12px; }}
+    .accent-number, .overview-subheading .accent-number {{ color:var(--color-primary); }}
+    .panel, .metric, .notice, .map-panel, .category-metric, .progress-card, .detail-box, .institution-list {{ background:#ffffff; border:var(--card-border); border-radius:var(--card-radius); box-shadow:none; }}
+    .panel {{ padding:20px; }}
+    .grid {{ gap:16px; }}
+    .kpis {{ gap:16px; margin:16px 0 24px; }}
+    .kpis .metric {{ background:#ffffff; min-height:116px; padding:20px; }}
+    .metric {{ background:#ffffff; }}
+    .metric-title, .category-metric-title {{ color:var(--color-muted); font-size:12px; font-weight:var(--font-weight-medium); letter-spacing:.04em; text-transform:uppercase; }}
+    .metric-value {{ color:var(--color-ink); font-size:30px; font-weight:var(--font-weight-bold); letter-spacing:0; line-height:1.1; }}
+    .metric-note, .metric-meta, .comparison-rank {{ color:var(--color-muted); font-size:12px; font-weight:var(--font-weight-regular); }}
+    .selected-kpis .metric {{ padding:12px; }}
+    .selected-kpis .metric-title {{ color:var(--color-muted); font-size:11px; font-weight:var(--font-weight-medium); letter-spacing:.02em; text-transform:uppercase; }}
+    .selected-kpis .metric-value {{ color:var(--color-ink); font-size:24px; font-weight:var(--font-weight-bold); }}
+    .comparison-delta.above {{ color:#1A7A4A; }}
+    .comparison-delta.below {{ color:#C0392B; }}
+    .comparison-delta.neutral {{ color:var(--color-muted); }}
+    select, .toggle button {{ background:#ffffff; border:1px solid var(--color-line); border-radius:6px; box-shadow:0 1px 2px rgba(0,0,0,.04); color:var(--color-ink); font-size:14px; font-weight:var(--font-weight-medium); padding:8px 36px 8px 12px; }}
+    select:hover, .toggle button:hover {{ border-color:#B8CFF0; }}
+    select:focus-visible, .toggle button:focus-visible, summary:focus-visible, a:focus-visible {{ outline:2px solid var(--color-primary); outline-offset:2px; }}
+    .municipality-selector-bar {{ background:transparent; border:0; border-radius:0; box-shadow:none; gap:12px; margin:16px 0; padding:0; }}
+    .municipality-selector-bar label {{ color:var(--color-ink); font-size:14px; font-weight:var(--font-weight-medium); }}
+    .bar-track, .progress-track {{ background:var(--color-soft); border:0; border-radius:999px; }}
+    .bar-fill, .progress-fill, .hist-bar {{ background:var(--color-primary); }}
+    .bar-label, .bar-value {{ color:var(--color-ink); font-size:13px; font-weight:var(--font-weight-medium); }}
+    .hist {{ border-color:var(--color-line); }}
+    .hist-count {{ color:var(--color-primary); font-weight:var(--font-weight-bold); }}
+    .hist-label {{ color:var(--color-muted); }}
+    .donut, .map-panel {{ border-color:var(--color-line); }}
+    .legend-item, table {{ font-size:13px; }}
+    th {{ background:var(--color-soft); color:var(--color-muted); font-size:12px; font-weight:var(--font-weight-bold); letter-spacing:.04em; text-transform:uppercase; }}
+    td {{ color:var(--color-ink); }}
+    th, td {{ border-bottom:1px solid var(--color-soft); }}
+    tbody tr:nth-child(even) {{ background:#F7F9FD; }}
+    .scroll {{ border-color:var(--color-line); border-radius:6px; }}
+    .category h3 {{ border-top:1px solid var(--color-line); color:var(--color-ink); padding-top:24px; }}
+    .category-dashboard {{ gap:16px; }}
+    .category-metric {{ padding:12px; }}
+    .category-metric-value, .progress-value {{ color:var(--color-ink); font-weight:var(--font-weight-bold); }}
+    .indicator-title, .check-label, .progress-title {{ color:var(--color-ink); font-weight:var(--font-weight-medium); }}
+    .status-badge, .chip-badge, .status-pill {{ border-radius:4px; font-weight:var(--font-weight-medium); }}
+    .status-badge.yes, .status-pill.success, .status-pill.info {{ background:#E8F0FB; border-color:#B8CFF0; color:var(--color-primary); }}
+    .status-badge.no, .status-pill.neutral {{ background:#F1F3F7; border-color:var(--color-line); color:var(--color-muted); }}
+    .status-pill.warning {{ background:#FEF3E2; color:#B45309; }}
+    a {{ color:var(--color-primary); font-weight:var(--font-weight-medium); }}
+    .resource-empty {{ color:var(--color-muted); font-size:14px; }}
+    .cec-overview-grid {{ align-items:stretch; display:grid; gap:24px; grid-template-columns:minmax(0,2.05fr) minmax(300px,.95fr); margin-top:24px; }}
+    .cec-side-stack {{ display:grid; gap:24px; grid-template-rows:auto 1fr; height:100%; min-width:0; }}
+    .cec-ranking-card, .cec-side-card {{ min-width:0; }}
+    .cec-ranking-card {{ display:flex; flex-direction:column; min-height:0; }}
+    .cec-side-card {{ display:flex; flex-direction:column; min-height:240px; }}
+    .cec-status-card {{ min-height:0; }}
+    .cec-ranking-card h3, .cec-side-card h3 {{ color:var(--color-ink); font-size:16px; font-weight:var(--font-weight-bold); line-height:1.45; margin-bottom:4px; }}
+    .cec-ranking-card p, .cec-side-card p {{ color:var(--color-muted); font-size:14px; line-height:1.55; margin-bottom:18px; }}
+    .cec-ranking-chart {{ flex:0 0 auto; min-height:0; padding:6px 18px 0 0; }}
+    .cec-rank-plot {{ display:grid; grid-template-columns:150px minmax(0,1fr); position:relative; }}
+    .cec-rank-row {{ display:contents; }}
+    .cec-rank-label {{ align-items:center; color:var(--color-ink); display:flex; font-size:14px; font-weight:var(--font-weight-medium); justify-content:flex-end; line-height:1.2; min-height:26px; padding-right:18px; text-align:right; }}
+    .cec-rank-track {{ align-items:center; display:flex; min-height:26px; position:relative; }}
+    .cec-rank-track::before {{ background:#F2F5FA; content:""; display:block; height:22px; left:0; opacity:0; position:absolute; right:0; }}
+    .cec-rank-row:nth-child(8n) .cec-rank-track::before, .cec-rank-row:nth-child(8n) .cec-rank-label {{ background:#F7F9FD; }}
+    .cec-rank-bar {{ border-radius:3px; height:16px; min-width:2px; position:relative; z-index:1; }}
+    .cec-rank-bar.high, .cec-legend i.designated, .cec-status-fill.designated {{ background:#074BA9; }}
+    .cec-rank-bar.middle, .cec-legend i.in-progress, .cec-status-fill.in-progress {{ background:#5A9FD3; }}
+    .cec-rank-bar.low, .cec-legend i.not-started, .cec-status-fill.not-started {{ background:#B0BACE; }}
+    .cec-rank-axis {{ align-items:center; border-top:1px solid var(--color-line); color:var(--color-muted); display:flex; font-size:12px; grid-column:2; justify-content:space-between; margin-top:4px; padding-top:8px; }}
+    .cec-legend {{ display:flex; flex-wrap:wrap; gap:22px; margin-top:10px; }}
+    .cec-legend span {{ align-items:center; color:var(--color-muted); display:inline-flex; font-size:14px; gap:8px; }}
+    .cec-legend i {{ border-radius:3px; display:inline-block; height:14px; width:14px; }}
+    .cec-distribution-chart {{ align-items:end; display:flex; flex:1; gap:18px; min-height:150px; padding:8px 0 0 42px; position:relative; }}
+    .cec-distribution-chart::before {{ border-bottom:1px solid var(--color-line); bottom:30px; content:""; left:42px; position:absolute; right:0; }}
+    .cec-dist-y-axis {{ bottom:30px; color:var(--color-muted); display:flex; flex-direction:column-reverse; font-size:12px; justify-content:space-between; left:0; position:absolute; top:6px; width:28px; }}
+    .cec-dist-bin {{ align-items:center; display:flex; flex:1; flex-direction:column; gap:8px; height:100%; justify-content:flex-end; min-width:0; position:relative; }}
+    .cec-dist-bar {{ background:#074BA9; border-radius:4px 4px 0 0; min-height:2px; width:min(48px,70%); z-index:1; }}
+    .cec-dist-label {{ color:var(--color-muted); font-size:12px; line-height:1.2; min-height:30px; text-align:center; }}
+    .cec-status-summary {{ display:grid; gap:14px; margin-top:18px; }}
+    .cec-status-row {{ display:grid; gap:6px; }}
+    .cec-status-head {{ align-items:center; color:var(--color-muted); display:flex; font-size:14px; justify-content:space-between; }}
+    .cec-status-count {{ font-weight:var(--font-weight-medium); }}
+    .cec-status-track {{ background:#EEF1F7; border-radius:999px; height:8px; overflow:hidden; }}
+    .cec-status-fill {{ border-radius:999px; height:100%; min-width:2px; }}
+    .explorer-summary-row {{ align-items:stretch; display:grid; gap:24px; grid-template-columns:minmax(320px,.78fr) minmax(420px,1.22fr); margin:18px 0 0; }}
+    .explorer-primary-group {{ display:grid; gap:12px; margin-top:18px; }}
+    .explorer-primary-group .profile-head {{ margin:0 0 16px; }}
+    .municipality-profile-card {{ background:#ffffff; border:1px solid var(--color-line); border-radius:var(--card-radius); padding:20px 24px; }}
+    .municipality-profile-top {{ align-items:flex-start; display:flex; flex-direction:column; gap:0; justify-content:flex-start; margin-bottom:18px; }}
+    .municipality-profile-name {{ color:var(--color-ink); font-size:28px; font-weight:var(--font-weight-bold); line-height:1.05; margin:0 0 6px; }}
+    .municipality-profile-subtitle {{ color:var(--color-muted); font-size:16px; line-height:1.25; margin:0; }}
+    .profile-pill-row {{ align-items:center; display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-start; margin-bottom:22px; }}
+    .profile-status-pill {{ align-items:center; background:#ffffff; border:1px solid #D1D9E6; border-radius:6px; color:var(--color-primary); display:inline-flex; font-size:14px; font-weight:var(--font-weight-bold); line-height:1; min-height:34px; padding:8px 12px; white-space:nowrap; }}
+    .profile-star-pill {{ color:var(--color-ink); gap:10px; }}
+    .profile-star-icons {{ display:inline-flex; gap:4px; letter-spacing:0; }}
+    .profile-star.filled {{ color:#F18A00; }}
+    .profile-star.empty {{ color:#D8DEE9; }}
+    .profile-star-text {{ color:var(--color-ink); font-weight:var(--font-weight-bold); }}
+    .profile-score-row {{ align-items:baseline; display:flex; justify-content:flex-start; gap:10px; margin-bottom:6px; }}
+    .profile-score {{ color:var(--color-ink); font-size:54px; font-weight:var(--font-weight-bold); line-height:.95; }}
+    .profile-score-unit {{ color:var(--color-muted); font-size:20px; font-weight:var(--font-weight-medium); margin-left:8px; }}
+    .profile-score-max, .profile-rank {{ color:var(--color-muted); font-size:15px; font-weight:var(--font-weight-medium); }}
+    .profile-meter {{ background:#EEF1F7; border-radius:999px; height:14px; overflow:visible; position:relative; }}
+    .profile-meter-fill {{ background:var(--color-primary); border-radius:999px; height:100%; min-width:3px; }}
+    .profile-threshold-marker {{ background:var(--color-primary-dark); bottom:0; position:absolute; top:0; width:2px; }}
+    .profile-meter-labels {{ color:#8A96AA; display:grid; font-size:13px; grid-template-columns:1fr 1fr 1fr; margin-top:6px; }}
+    .profile-meter-labels span:nth-child(2) {{ color:var(--color-muted); text-align:center; }}
+    .profile-meter-labels span:last-child {{ text-align:right; }}
+    .profile-rank {{ margin-top:10px; }}
+    .profile-head .map-panel, .profile-head .map-panel iframe, .explorer-comparison-card {{ height:430px; min-height:430px; }}
+    .explorer-comparison-card {{ overflow:hidden; }}
+    .explorer-comparison-card p {{ margin-bottom:12px; }}
+    .explorer-comparison-chart {{ padding:4px 16px 0 0; }}
+    .explorer-compare-plot {{ --compare-label-width:126px; display:grid; grid-template-columns:var(--compare-label-width) minmax(0,1fr); position:relative; }}
+    .explorer-compare-row {{ display:contents; }}
+    .explorer-compare-label {{ align-items:center; color:var(--color-ink); display:flex; font-size:12px; font-weight:var(--font-weight-medium); justify-content:flex-end; line-height:1.05; min-height:20px; padding-right:14px; text-align:right; }}
+    .explorer-compare-track {{ align-items:center; display:flex; min-height:20px; position:relative; }}
+    .explorer-compare-track::before {{ background:#F7F9FD; content:""; display:none; inset:1px 0; position:absolute; }}
+    .explorer-compare-row.highlight .explorer-compare-track::before {{ display:none; }}
+    .explorer-compare-row.highlight .explorer-compare-label {{ background:transparent; }}
+    .explorer-compare-bar {{ background:#D0DEFA; border-radius:3px; height:13px; min-width:2px; position:relative; z-index:1; }}
+    .explorer-compare-bar.selected {{ background:var(--color-primary); }}
+    .explorer-compare-threshold {{ border-left:2px dashed var(--color-primary); bottom:28px; left:calc(var(--compare-label-width) + (100% - var(--compare-label-width)) * var(--threshold-position)); pointer-events:none; position:absolute; top:0; z-index:2; }}
+    .explorer-compare-axis {{ align-items:center; border-top:1px solid var(--color-line); color:var(--color-muted); display:flex; font-size:12px; grid-column:2; justify-content:space-between; margin-top:4px; padding-top:8px; }}
+    .planning-indicators {{ background:#ffffff; border:1px solid var(--color-line); border-radius:var(--card-radius); padding:20px 24px; }}
+    .planning-indicators h3 {{ font-size:17px; margin-bottom:4px; }}
+    .planning-indicators p {{ font-size:13px; line-height:1.45; margin-bottom:14px; }}
+    .indicator-list {{ display:grid; gap:0; }}
+    .indicator-row {{ align-items:center; border-bottom:1px solid var(--color-soft); display:grid; gap:16px; grid-template-columns:minmax(180px,1fr) minmax(120px,auto); padding:9px 0; }}
+    .indicator-row:last-child {{ border-bottom:0; }}
+    .indicator-row-label {{ color:var(--color-muted); font-size:13px; font-weight:var(--font-weight-medium); line-height:1.25; }}
+    .indicator-row-value {{ color:var(--color-ink); font-size:13px; font-weight:var(--font-weight-bold); line-height:1.25; text-align:right; }}
+    .indicator-row-value.positive {{ color:#1A7A4A; }}
+    .indicator-row-value.negative {{ color:#B45309; }}
+    .indicator-row-check {{ color:#1A7A4A; margin-right:8px; }}
+    .indicator-row-x {{ color:#B45309; margin-right:8px; }}
+    .category-overview {{ margin-top:0; }}
+    .category-overview p {{ margin-bottom:14px; }}
+    .category-pair {{ align-items:stretch; display:grid; gap:24px; grid-template-columns:minmax(0,1fr) minmax(0,1fr); margin-top:var(--space-6); }}
+    .category-pair .category {{ margin-top:0; }}
+    .category-pair .category h3 {{ margin-top:0; }}
+    .category-pair .category, .category-pair .content, .category-pair .building-panel {{ display:flex; flex-direction:column; min-height:100%; }}
+    .building-panel {{ background:#ffffff; border:1px solid var(--color-line); border-radius:var(--card-radius); overflow:hidden; }}
+    .building-panel-title {{ color:var(--color-ink); font-size:17px; font-weight:var(--font-weight-bold); line-height:1.4; margin:0; padding:16px 20px 4px; }}
+    .building-panel-intro {{ border-bottom:0; padding:0 20px 14px; }}
+    .building-panel-intro p {{ color:var(--color-muted); font-size:13px; line-height:1.45; margin:0; }}
+    .building-panel-body {{ display:flex; flex:1; flex-direction:column; padding:0; }}
+    .building-score-grid {{ border-top:1px solid var(--color-line); display:grid; gap:0; grid-template-columns:repeat(3,minmax(0,1fr)); margin-bottom:0; }}
+    .housing-score-grid {{ grid-template-columns:repeat(4,minmax(0,1fr)); }}
+    .building-score-card {{ background:#ffffff; border:0; border-bottom:1px solid var(--color-line); border-radius:0; display:flex; flex-direction:column; min-width:0; overflow:hidden; padding:20px 24px; }}
+    .building-score-card + .building-score-card {{ border-left:1px solid var(--color-line); }}
+    .building-score-label {{ color:var(--color-muted); font-size:15px; font-weight:var(--font-weight-medium); line-height:1.25; margin:0 0 8px; }}
+    .building-score-value {{ color:var(--color-ink); font-size:clamp(22px, 2.3vw, 28px); font-weight:var(--font-weight-bold); line-height:1; margin:0 0 10px; overflow-wrap:anywhere; }}
+    .building-score-meta {{ color:var(--color-muted); font-size:clamp(12px, 1.2vw, 14px); font-weight:var(--font-weight-bold); line-height:1.25; margin:auto 0 0; overflow-wrap:anywhere; padding-top:12px; }}
+    .building-score-meta.above {{ color:#1A7A4A; }}
+    .building-score-meta.below {{ color:#B45309; }}
+    .building-score-meta.neutral {{ color:var(--color-muted); }}
+    .average-disclaimer {{ color:var(--color-muted); font-size:12px; line-height:1.35; margin:10px 24px 14px; }}
+    .building-policy-list {{ flex:1; padding:0 24px 16px; }}
+    .building-policy-list .indicator-row {{ padding:13px 0; }}
+    .ev-panel {{ background:#ffffff; border:1px solid var(--color-line); border-radius:var(--card-radius); margin-top:var(--space-6); overflow:hidden; }}
+    .category:has(.ev-panel) h3 {{ border-top:0; padding-top:0; }}
+    .ev-panel-head {{ align-items:center; display:flex; justify-content:space-between; gap:16px; padding:12px 20px 2px; }}
+    .ev-panel-title {{ color:var(--color-ink); font-size:17px; font-weight:var(--font-weight-bold); line-height:1.4; margin:0; }}
+    .category .ev-panel-title, .category .workforce-panel-title {{ border-top:0; margin:0; padding-top:0; }}
+    .ev-panel-subtitle {{ color:var(--color-muted); font-size:14px; font-weight:var(--font-weight-medium); margin:0; text-align:right; }}
+    .ev-panel-intro {{ padding:0 20px 10px; }}
+    .ev-panel-intro p {{ color:var(--color-muted); font-size:13px; line-height:1.45; margin:0; }}
+    .ev-panel-body {{ border-top:1px solid var(--color-line); display:grid; grid-template-columns:minmax(240px,.62fr) minmax(0,1.38fr); }}
+    .ev-pie-area {{ align-items:center; border-right:1px solid var(--color-line); display:grid; gap:14px; grid-template-columns:minmax(118px,150px) minmax(0,1fr); min-width:0; padding:22px 24px; }}
+    .ev-pie {{ align-items:center; background:#D0DEFA; border:1px solid var(--color-line); border-radius:50%; display:flex; height:138px; justify-content:center; position:relative; width:138px; }}
+    .ev-pie::after {{ background:#ffffff; border:1px solid var(--color-line); border-radius:50%; content:""; inset:36px; position:absolute; }}
+    .ev-pie-center {{ position:relative; z-index:1; }}
+    .ev-pie-label {{ background:rgba(255,255,255,.94); border:1px solid rgba(26,38,64,.18); border-radius:999px; color:#1A2640; font-size:11px; font-weight:var(--font-weight-bold); line-height:1; min-width:34px; padding:4px 6px; position:absolute; text-align:center; transform:translate(-50%, -50%); z-index:2; }}
+    .ev-pie-legend {{ display:grid; gap:8px; }}
+    .ev-pie-legend-item {{ align-items:center; color:var(--color-muted); display:grid; font-size:13px; gap:8px; grid-template-columns:12px 1fr auto; }}
+    .ev-pie-swatch {{ border-radius:3px; height:12px; width:12px; }}
+    .ev-metrics-area {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); min-width:0; }}
+    .ev-metrics-area .building-score-card {{ border-bottom:1px solid var(--color-line); }}
+    .ev-metrics-area .building-score-card:nth-child(3), .ev-metrics-area .building-score-card:nth-child(4) {{ border-bottom:0; }}
+    .ev-metrics-area .building-score-card:nth-child(3) {{ border-left:0; }}
+    .ev-metrics-area .building-score-card:nth-child(even) {{ border-left:1px solid var(--color-line); }}
+    .ev-metrics-area .average-disclaimer {{ border-top:1px solid var(--color-line); grid-column:1 / -1; margin:0; padding:10px 24px 12px; }}
+    .ev-policy-list {{ grid-column:1 / -1; padding:0 24px 16px; }}
+    .ev-policy-list .indicator-row {{ padding:13px 0; }}
+    .workforce-panel {{ background:#ffffff; border:1px solid var(--color-line); border-radius:var(--card-radius); margin-top:var(--space-6); overflow:hidden; }}
+    .workforce-panel-head {{ align-items:flex-start; display:flex; flex-direction:column; gap:6px; justify-content:flex-start; padding:16px 20px; }}
+    .workforce-panel-title {{ color:var(--color-ink); font-size:17px; font-weight:var(--font-weight-bold); line-height:1.4; margin:0; }}
+    .workforce-panel-description {{ color:var(--color-muted); font-size:13px; line-height:1.45; margin:0; width:100%; }}
+    .workforce-panel-body {{ border-top:1px solid var(--color-line); display:grid; grid-template-columns:minmax(300px,.75fr) minmax(0,1.25fr); }}
+    .workforce-column {{ min-width:0; }}
+    .workforce-column.education-column {{ display:grid; grid-template-rows:auto 1fr; }}
+    .workforce-column.employment-column {{ display:grid; grid-template-rows:auto 1fr auto; }}
+    .workforce-column + .workforce-column {{ border-left:1px solid var(--color-line); }}
+    .workforce-subhead {{ background:#EEF1F7; border-bottom:1px solid var(--color-line); color:var(--color-muted); font-size:12px; font-weight:var(--font-weight-bold); letter-spacing:.12em; line-height:1.2; padding:12px 20px; text-transform:uppercase; }}
+    .workforce-education-top {{ display:grid; grid-template-columns:minmax(190px,.7fr) minmax(220px,1fr); min-height:100%; }}
+    .workforce-education-top .building-score-card {{ border-bottom:0; }}
+    .workforce-institution-summary {{ padding:18px 20px; }}
+    .workforce-chart-card {{ padding:18px 20px 22px; }}
+    .workforce-chart-title {{ color:var(--color-muted); font-size:15px; font-weight:var(--font-weight-medium); line-height:1.3; margin:0 0 12px; }}
+    .workforce-chart {{ display:grid; gap:3px; }}
+    .workforce-chart-row {{ align-items:center; display:grid; gap:10px; grid-template-columns:112px minmax(0,1fr); min-height:20px; }}
+    .workforce-chart-label {{ color:var(--color-ink); font-size:12px; font-weight:var(--font-weight-medium); line-height:1.05; text-align:right; }}
+    .workforce-chart-track {{ align-items:center; display:flex; min-height:20px; }}
+    .workforce-chart-bar {{ background:#D0DEFA; border-radius:999px; height:10px; min-width:2px; }}
+    .workforce-chart-bar.selected {{ background:var(--color-primary); }}
+    .workforce-chart-axis {{ border-top:1px solid var(--color-line); color:var(--color-muted); display:flex; font-size:11px; justify-content:space-between; margin-left:122px; padding-top:6px; }}
+    .workforce-metric-grid {{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }}
+    .workforce-metric-grid .building-score-card {{ border-bottom:0; }}
+    .workforce-metric-grid .building-score-card + .building-score-card {{ border-left:1px solid var(--color-line); }}
+    .workforce-panel .average-disclaimer {{ border-top:1px solid var(--color-line); margin:0; padding:10px 24px 12px; }}
+    .housing-panel {{ margin-top:var(--space-6); }}
+    .institution-links {{ display:grid; gap:14px; list-style:none; margin:0; padding:0; }}
+    .institution-links li {{ align-items:start; display:grid; gap:12px; grid-template-columns:30px minmax(0,1fr); }}
+    .institution-link-icon {{ align-items:center; background:#F1F6FF; border-radius:6px; color:var(--color-primary); display:inline-flex; font-size:15px; font-weight:var(--font-weight-bold); height:30px; justify-content:center; line-height:1; text-decoration:none; width:30px; }}
+    .institution-link-title {{ color:var(--color-primary); display:inline; font-size:15px; font-weight:var(--font-weight-bold); line-height:1.28; text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px; }}
+    .institution-link-title:hover {{ color:#053A83; }}
+    .institution-empty {{ color:var(--color-muted); font-size:13px; line-height:1.4; margin:0; }}
+    .nys-breakdown-heading {{ font-size:17px; line-height:1.4; margin-bottom:4px; }}
+    #overview-kpis {{ align-items:stretch; gap:14px; }}
+    #overview-kpis .metric {{ align-items:flex-start; background:#ffffff; border:1px solid #D3DAE6; border-radius:6px; box-shadow:none; display:flex; flex-direction:column; justify-content:space-between; min-height:112px; padding:16px 18px; text-align:left; }}
+    #overview-kpis .metric-title {{ color:var(--color-muted); display:block; font-size:13px; font-weight:var(--font-weight-bold); letter-spacing:.08em; line-height:1.25; margin:0; min-height:0; order:1; text-align:left; text-transform:uppercase; }}
+    #overview-kpis .metric-value {{ color:var(--color-ink); font-size:30px; font-weight:var(--font-weight-bold); letter-spacing:0; line-height:1; margin:18px 0 0; order:2; text-align:left; }}
+    .nys-status {{ align-items:center; display:inline-flex; gap:8px; font-size:13px; font-weight:var(--font-weight-medium); white-space:nowrap; }}
+    .nys-status::before {{ border-radius:50%; content:""; display:inline-block; height:8px; width:8px; }}
+    .nys-status.completed {{ color:#1A7A4A; }}
+    .nys-status.completed::before {{ background:#1A7A4A; }}
+    .nys-status.in-progress {{ color:#B45309; }}
+    .nys-status.in-progress::before {{ background:#B45309; }}
+    .nys-status.not-started {{ color:var(--color-muted); }}
+    .nys-status.not-started::before {{ background:#B0BACE; }}
+    .nys-total-row td {{ background:#F7F9FD; font-weight:var(--font-weight-bold); }}
+    .nys-table-wrap th, .sources-table-wrap th {{ position:sticky; top:0; z-index:2; }}
+    .sr-only {{ border:0; clip:rect(0,0,0,0); height:1px; margin:-1px; overflow:hidden; padding:0; position:absolute; white-space:nowrap; width:1px; }}
+    .info-tip {{ align-items:center; background:#ffffff; border:1px solid #C8D7EA; border-radius:999px; color:var(--color-primary); cursor:help; display:inline-flex; font-family:var(--font-family-base); font-size:11px; font-weight:var(--font-weight-bold); height:18px; justify-content:center; line-height:1; margin-left:6px; padding:0; vertical-align:middle; width:18px; }}
+    .info-tip:hover, .info-tip:focus-visible {{ background:var(--color-primary-soft); border-color:var(--color-primary); outline:2px solid rgba(8,73,167,.22); outline-offset:2px; }}
+    .term-with-tip {{ align-items:center; display:inline-flex; gap:4px; }}
+    .metric-title .info-tip, h2 .info-tip, h3 .info-tip, .indicator-row-label .info-tip, .cec-legend .info-tip, .cec-status-head .info-tip {{ flex:0 0 auto; }}
+    .dashboard-tooltip {{ background:#1A2640; border-radius:6px; box-shadow:0 14px 30px rgba(26,38,64,.18); color:#ffffff; left:0; max-width:320px; opacity:0; padding:14px 16px; pointer-events:none; position:fixed; top:0; transform:translate(12px,12px); transition:opacity .04s linear; z-index:1000; }}
+    .dashboard-tooltip.visible {{ opacity:1; }}
+    .tooltip-title {{ color:#ffffff; font-size:16px; font-weight:var(--font-weight-bold); line-height:1.35; margin:0 0 8px; }}
+    .tooltip-subtitle {{ color:#B0BACE; font-size:14px; line-height:1.4; margin:0 0 10px; }}
+    .tooltip-value {{ color:#B0BACE; font-size:14px; line-height:1.4; margin:0; }}
+    .tooltip-value strong {{ color:#ffffff; font-size:16px; font-weight:var(--font-weight-bold); }}
+    @media (max-width: 1180px) {{
+      .ev-panel-body {{ grid-template-columns:1fr; }}
+      .ev-pie-area {{ border-right:0; border-bottom:1px solid var(--color-line); }}
+      .workforce-panel-body {{ grid-template-columns:1fr; }}
+      .workforce-column + .workforce-column {{ border-left:0; border-top:1px solid var(--color-line); }}
+      .workforce-metric-grid {{ grid-template-columns:repeat(2,minmax(0,1fr)); }}
+      .workforce-metric-grid .building-score-card:nth-child(3) {{ border-left:0; }}
+      .workforce-metric-grid .building-score-card:nth-child(n+3) {{ border-top:1px solid var(--color-line); }}
+      .housing-score-grid {{ grid-template-columns:repeat(2,minmax(0,1fr)); }}
+      .housing-score-grid .building-score-card:nth-child(3) {{ border-left:0; }}
+    }}
+    @media (max-width: 850px) {{
+      main, body.nav-collapsed main {{ margin-left:0; }}
+      .dashboard-content {{ padding:24px 16px; }}
+      .section-nav {{ background:var(--color-primary); padding:16px; width:auto; }}
+      body.nav-collapsed .section-nav {{ padding:16px; width:auto; }}
+      .section-nav button {{ border-bottom:0; border-radius:6px; }}
+      .section-nav button.active, .section-nav button:hover {{ background:rgba(255,255,255,.14); }}
+      .cec-overview-grid {{ grid-template-columns:1fr; }}
+      .cec-side-stack {{ grid-template-rows:auto; }}
+      .nys-detail-layout {{ grid-template-columns:1fr; }}
+      .cec-ranking-card, .cec-side-card {{ min-height:0; }}
+      .cec-rank-plot {{ grid-template-columns:112px minmax(0,1fr); }}
+      .cec-rank-label {{ font-size:12px; padding-right:10px; }}
+      .cec-distribution-chart {{ gap:8px; }}
+      .explorer-summary-row {{ grid-template-columns:1fr; }}
+      .municipality-profile-top, .profile-score-row {{ align-items:flex-start; flex-direction:column; }}
+      .profile-pill-row {{ justify-content:flex-start; }}
+      .municipality-profile-name {{ font-size:28px; }}
+      .municipality-profile-subtitle {{ font-size:17px; }}
+      .profile-status-pill {{ font-size:14px; min-height:34px; }}
+      .profile-score {{ font-size:44px; }}
+      .profile-score-unit {{ font-size:18px; margin-left:0; }}
+      .explorer-compare-plot {{ --compare-label-width:94px; }}
+      .explorer-compare-label {{ font-size:12px; padding-right:10px; }}
+      .category-pair {{ grid-template-columns:1fr; }}
+      .building-score-grid, .housing-score-grid {{ grid-template-columns:1fr; }}
+      .building-score-card + .building-score-card {{ border-left:0; }}
+      .ev-panel-body {{ grid-template-columns:1fr; }}
+      .ev-pie-area {{ border-right:0; border-bottom:1px solid var(--color-line); grid-template-columns:120px 1fr; }}
+      .ev-pie {{ height:112px; width:112px; }}
+      .ev-pie::after {{ inset:30px; }}
+      .ev-metrics-area {{ grid-template-columns:1fr; }}
+      .ev-metrics-area .building-score-card:nth-child(even) {{ border-left:0; }}
+      .workforce-panel-body, .workforce-education-top, .workforce-metric-grid {{ grid-template-columns:1fr; }}
+      .workforce-column + .workforce-column, .workforce-metric-grid .building-score-card:nth-child(even), .workforce-metric-grid .building-score-card + .building-score-card {{ border-left:0; }}
+      .workforce-metric-grid .building-score-card:nth-child(n+2) {{ border-top:1px solid var(--color-line); }}
+      .workforce-chart-row {{ grid-template-columns:88px minmax(0,1fr); }}
+      .workforce-chart-axis {{ margin-left:98px; }}
+    }}
+  </style>
+</head>
+<body>
+<main>
+  <div class="dashboard-shell">
+    <nav class="section-nav" id="section-nav" aria-label="Dashboard sections">
+      <button class="active" data-view="overview" type="button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10.5V20h13v-9.5"></path><path d="M9.5 20v-5h5v5"></path></svg></span><span class="nav-label">Overview</span></button>
+      <button data-view="explorer" type="button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"></circle><path d="m16 16 4 4"></path></svg></span><span class="nav-label">Municipality Explorer</span></button>
+      <button data-view="methodology" type="button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 10v7"></path><path d="M12 7h.01"></path></svg></span><span class="nav-label">Sources</span></button>
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-controls="section-nav" aria-expanded="true" aria-label="Collapse navigation"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></span><span class="nav-label">Collapse menu</span></button>
+    </nav>
+    <div class="dashboard-content">
+      <!-- Looker Studio Page 1: Long Island Overview -->
+      <section id="overview" class="page active">
+        <div class="dashboard-purpose">
+          <h1>{escape(dashboard_copy["intro"]["title"])}</h1>
+          <p>{escape(dashboard_copy["intro"]["body"][0])} {info_tip("nyserda", "NYSERDA")} {info_tip("cec", "Clean Energy Communities")}</p>
+          <p>{escape(dashboard_copy["intro"]["body"][1])} {info_tip("readiness", "Readiness")}</p>
+        </div>
+        <div class="why-indicators">
+          <h3>{escape(dashboard_copy["indicatorExplanation"]["title"])} {info_tip("indicator", "Indicator")}</h3>
+          <p>{escape(dashboard_copy["indicatorExplanation"]["body"][0])}</p>
+          <p>{escape(dashboard_copy["indicatorExplanation"]["body"][1])}</p>
+        </div>
+        <h2>{escape(dashboard_copy["sections"]["overviewTitle"])}</h2>
+        <div class="overview-lead">
+          <p class="overview-subheading">{escape(dashboard_copy["sections"]["overviewLead"]).replace("15", '<span class="accent-number">15</span>', 1)}</p>
+          <div class="grid kpis" id="overview-kpis"></div>
+        </div>
+        <div class="cec-overview-grid">
+          <div class="panel cec-ranking-card">
+            <h3>Municipality Ranking by NYSERDA CEC Points {info_tip("nyserda_cec_points", "NYSERDA CEC Points")}</h3>
+            <p>Sorted highest to lowest.</p>
+            <div id="rank-chart" class="cec-ranking-chart"></div>
+            <div class="cec-legend" aria-label="Clean Energy Communities status legend">
+              <span><i class="designated"></i>Designated {info_tip("designated", "Designated")}</span>
+              <span><i class="in-progress"></i>In Progress {info_tip("in_progress", "In Progress")}</span>
+              <span><i class="not-started"></i>Not Started {info_tip("not_started", "Not Started")}</span>
+            </div>
+          </div>
+          <div class="cec-side-stack">
+            <div class="panel cec-side-card cec-status-card">
+              <h3>Status Summary {info_tip("cec_designation_status", "CEC Designation Status")}</h3>
+              <div id="cec-status-summary"></div>
+            </div>
+            <div class="panel cec-side-card">
+              <h3>Distribution of CEC Points {info_tip("nyserda_cec_points", "NYSERDA CEC Points")}</h3>
+              <p>How many municipalities fall within each scoring band.</p>
+              <div id="histogram" class="cec-distribution-chart"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Looker Studio Page 2: Municipality Explorer -->
+      <section id="explorer" class="page">
+        <h2>{escape(dashboard_copy["sections"]["municipalityExplorerTitle"])}</h2>
+        <p class="section-intro explorer-intro">{escape(dashboard_copy["sections"]["municipalityExplorer"][0])}</p>
+        <p class="section-intro explorer-intro">{escape(dashboard_copy["sections"]["municipalityExplorer"][1])}</p>
+        <div class="municipality-selector-bar">
+          <label for="municipality-select"><strong>{escape(dashboard_copy["labels"]["municipalitySelector"])}</strong></label>
+          <select id="municipality-select" aria-label="Select municipality"></select>
+        </div>
+        <div class="explorer-scroll">
+          <!-- Primary municipality context stays together so users see identity, summary indicators, map context, and ranking before detailed response tables. -->
+          <div class="explorer-primary-group">
+            <div class="explorer-summary-row">
+              <div id="municipality-profile-card" class="municipality-profile-card"></div>
+              <div class="planning-indicators" id="selected-kpis"></div>
+            </div>
+            <div class="profile-head">
+              <div class="map-panel" id="map-panel">
+                <iframe id="municipality-map" title="Selected municipality map" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+              </div>
+              <div class="panel explorer-comparison-card">
+                <h3>{escape(dashboard_copy["sections"]["comparisonTitle"])}</h3>
+                <p id="explorer-comparison-subtitle"></p>
+                <div id="explorer-comparison-chart" class="explorer-comparison-chart"></div>
+              </div>
+            </div>
+          </div>
+          <div class="grid explorer-analysis">
+            <div class="panel">
+              <h3 class="nys-breakdown-heading">{escape(dashboard_copy["sections"]["nyserdaBreakdownTitle"])} {info_tip("nyserda_cec_points", "NYSERDA CEC Points")}</h3>
+              <p>{escape(dashboard_copy["sections"]["nyserdaBreakdown"])}</p>
+              <div class="nys-detail-layout">
+                <div class="donut-wrap">
+                  <div id="donut" class="donut" role="img" aria-label="NYSERDA points breakdown donut chart"></div>
+                  <div id="donut-legend" class="legend"></div>
+                </div>
+                <div class="scroll nys-table-wrap"><table id="nys-points-table"></table></div>
+              </div>
+            </div>
+          </div>
+          <div class="section-block assessment-section">
+            <div id="category-sections"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Looker Studio Page 3: Sources -->
+      <section id="methodology" class="page">
+        <h2>{escape(dashboard_copy["sections"]["sourcesTitle"])}</h2>
+        <p class="section-intro methodology-intro">{escape(dashboard_copy["sections"]["sourcesIntro"][0])}</p>
+        <p class="section-intro methodology-intro">{escape(dashboard_copy["sections"]["sourcesIntro"][1])}</p>
+        <div class="panel sources-panel">
+          <div class="sources-controls" aria-label="Source filters">
+            <div class="filter-field">
+              <label for="source-municipality-filter">{escape(dashboard_copy["labels"]["sourceMunicipalityFilter"])}</label>
+              <select id="source-municipality-filter" aria-label="Filter sources by municipality"></select>
+            </div>
+            <div class="filter-field">
+              <label for="source-category-filter">{escape(dashboard_copy["labels"]["sourceCategoryFilter"])}</label>
+              <select id="source-category-filter" aria-label="Filter sources by category"></select>
+            </div>
+          </div>
+          <p id="sources-summary" class="sources-summary" aria-live="polite"></p>
+          <div class="scroll sources-table-wrap">
+            <table id="sources-table" class="sources-table">
+              <thead>
+                <tr>
+                  <th>{escape(dashboard_copy["labels"]["sourceTableMunicipality"])}</th>
+                  <th>{escape(dashboard_copy["labels"]["sourceTableCategory"])}</th>
+                  <th>{escape(dashboard_copy["labels"]["sourceTableName"])}</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p id="sources-empty" class="sources-empty" hidden>{escape(dashboard_copy["emptyStates"]["noSources"])}</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+<script>
+const DATA = {json.dumps(data)};
+const TOOLTIP_TEXT = {json.dumps(TOOLTIP_TEXT)};
+const fmt = new Intl.NumberFormat('en-US');
+const colors = ['#074BA9','#2176C7','#3A9BD5','#5A9FD3','#D0DEFA','#B0BACE','#1A7A4A','#B45309','#053A83','#8A96AA','#0E6BA8','#6EA8D7','#A9C7F7','#D8DEE9','#155E75','#92400E'];
+const metricOptions = [
+  {{label:'NYSERDA Points', field:'NYSERDA_Total', type:'number'}},
+  {{label:'Public EV Chargers', field:'Public EV Chargers', type:'number'}},
+  {{label:'Climate Smart Communities Status', field:'Climate Smart Community Status', type:'status'}},
+  {{label:'Climate Action Plan', field:'Climate Action Plan Status', type:'status'}},
+  {{label:'Renewable Energy Goal', field:'Renewable Energy Goal Status', type:'status'}},
+  {{label:'Public Transportation Lines', field:'Public Transportation Lines', type:'number'}},
+  {{label:'Environmental Organization Count', field:'Environmental, Climate, and Sustainability NGO Count', type:'number'}}
+];
+let selectedMetric = metricOptions[0];
+function el(id) {{ return document.getElementById(id); }}
+function labelFor(field) {{ return DATA.fieldLabels[field] || field; }}
+function escapeHtml(value) {{
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}}
+let dynamicTooltipCounter = 0;
+function infoTip(key, label='More information') {{
+  const text = TOOLTIP_TEXT[key];
+  if (!text) return '';
+  dynamicTooltipCounter += 1;
+  const id = `tip-${{key}}-${{dynamicTooltipCounter}}`;
+  return `<button class="info-tip" type="button" data-tooltip-title="${{escapeHtml(label)}}" data-tooltip-value="${{escapeHtml(text)}}" aria-describedby="${{id}}" aria-label="${{escapeHtml(label)}} information"><span aria-hidden="true">?</span><span id="${{id}}" class="sr-only">${{escapeHtml(text)}}</span></button>`;
+}}
+function valueText(value) {{
+  if (value === '' || value === null || value === undefined) return 'Not available';
+  const text = String(value).trim();
+  const lower = text.toLowerCase();
+  const replacements = {{
+    'yes':'Yes', 'no':'No', 'n/a':'Not applicable', 'registered':'Registered',
+    'bronze':'Bronze', 'not participating':'Not participating', 'participating':'Participating',
+    'designated':'Designated', 'no goal':'No goal', 'government only':'Government only',
+    'community':'Community', 'both':'Both', 'goverment operations':'Government operations'
+  }};
+  if (replacements[lower]) return replacements[lower];
+  return text.replace(/\\b\\w/g, ch => ch.toUpperCase()).replace(/Nys/g, 'NYS').replace(/Ev\\b/g, 'EV');
+}}
+function num(value) {{ const n = Number(value); return Number.isFinite(n) ? n : 0; }}
+function presentValue(value) {{
+  const t = String(value ?? '').trim().toLowerCase();
+  return !['', 'no', 'n/a', 'not participating', 'no goal', '0'].includes(t);
+}}
+function averageFor(field) {{
+  return DATA.records.reduce((sum, r) => sum + num(r[field]), 0) / DATA.records.length;
+}}
+function rankFor(field, record) {{
+  const ordered = [...DATA.records].sort((a,b)=>num(b[field])-num(a[field]) || a.Municipality.localeCompare(b.Municipality));
+  return ordered.findIndex(item => item.Municipality === record.Municipality) + 1;
+}}
+function cecRankFor(record) {{
+  return rankFor('NYSERDA_Total', record);
+}}
+function cecAxisMax() {{
+  const maxPoints = Math.max(...DATA.records.map(r=>num(r.NYSERDA_Total)), 1);
+  return Math.ceil(maxPoints / 500) * 500;
+}}
+function municipalityType(municipality) {{
+  return String(municipality).startsWith('City of') ? 'City' : 'Town';
+}}
+function shortMunicipality(municipality) {{
+  return String(municipality).replace(/^City of /, '');
+}}
+function comparisonMeta(field, record, formatter=(value)=>fmt.format(value)) {{
+  const avg = averageFor(field);
+  const value = num(record[field]);
+  const delta = avg ? Math.round((value - avg) / avg * 100) : 0;
+  const nearAverage = Math.abs(delta) <= 2;
+  const cls = nearAverage ? 'neutral' : delta > 0 ? 'above' : 'below';
+  const direction = nearAverage ? 'At the average across all municipalities' : `${{Math.abs(delta)}}% ${{delta > 0 ? 'above' : 'below'}} the average across all municipalities`;
+  return `<span class="comparison-delta ${{cls}}">${{direction}}</span>`;
+}}
+function percentValue(value) {{
+  const n = num(value);
+  return n <= 1 ? `${{(n * 100).toFixed(n * 100 < 1 && n > 0 ? 1 : 0)}}%` : `${{n.toFixed(0)}}%`;
+}}
+function yesNoValue(value) {{
+  return presentValue(value) ? 'Yes' : 'No';
+}}
+function metricCard(title, value, meta='') {{
+  return `<div class="metric"><div class="metric-title">${{title}}</div><div class="metric-value">${{value}}</div>${{meta ? `<div class="metric-meta">${{meta}}</div>` : ''}}</div>`;
+}}
+function categoryMetric(field, r, formatter=(value)=>fmt.format(num(value)), compare=true) {{
+  const value = formatter(r[field]);
+  const meta = compare ? comparisonMeta(field, r, (value)=>formatter(value)) : '';
+  return `<div class="category-metric"><div class="category-metric-title">${{labelFor(field)}}</div><div class="category-metric-value">${{value}}</div>${{meta ? `<div class="comparison-stat">${{meta}}</div>` : ''}}</div>`;
+}}
+function formatOneDecimal(value) {{
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? fmt.format(rounded) : rounded.toFixed(1);
+}}
+function vsAverageMeta(field, record) {{
+  const avg = averageFor(field);
+  const value = num(record[field]);
+  const delta = Math.round((value - avg) * 10) / 10;
+  if (Math.abs(delta) < 0.05) return {{text:'At avg', cls:'neutral'}};
+  return {{text:`${{delta > 0 ? '+' : '-'}}${{formatOneDecimal(Math.abs(delta))}} vs avg`, cls:delta > 0 ? 'above' : 'below'}};
+}}
+function percentVsAverageMeta(field, record) {{
+  const avg = averageFor(field);
+  const value = num(record[field]);
+  if (!avg) return {{text:'Average unavailable', cls:'neutral'}};
+  const delta = Math.round((value - avg) / avg * 100);
+  if (Math.abs(delta) <= 2) return {{text:'At avg', cls:'neutral'}};
+  return {{text:`${{Math.abs(delta)}}% ${{delta > 0 ? '▲ above avg' : '▼ below avg'}}`, cls:delta > 0 ? 'above' : 'below'}};
+}}
+function buildingScoreCard(label, value, meta=null) {{
+  return `<div class="building-score-card"><div class="building-score-label">${{escapeHtml(label)}}</div><div class="building-score-value">${{escapeHtml(value)}}</div>${{meta ? `<div class="building-score-meta ${{meta.cls}}">${{escapeHtml(meta.text)}}</div>` : ''}}</div>`;
+}}
+function workforceComparisonChart(field, selectedMunicipality) {{
+  const rows = [...DATA.records].sort((a,b)=>num(b[field])-num(a[field]) || a.Municipality.localeCompare(b.Municipality));
+  const max = Math.max(...rows.map(r=>num(r[field])), 1);
+  const axisMax = Math.max(1, Math.ceil(max));
+  const axisMid = axisMax / 2;
+  const rowHtml = rows.map(r => {{
+    const value = num(r[field]);
+    const selected = r.Municipality === selectedMunicipality;
+    return `<div class="workforce-chart-row" data-tooltip-title="${{escapeHtml(r.Municipality)}}" data-tooltip-value="${{escapeHtml(fmt.format(value))}} higher institutions"><div class="workforce-chart-label">${{escapeHtml(shortMunicipality(r.Municipality))}}</div><div class="workforce-chart-track"><div class="workforce-chart-bar${{selected ? ' selected' : ''}}" style="width:${{Math.max(2, value / axisMax * 100)}}%"></div></div></div>`;
+  }}).join('');
+  return `<div class="workforce-chart">${{rowHtml}}<div class="workforce-chart-axis"><span>0</span><span>${{formatOneDecimal(axisMid)}}</span><span>${{fmt.format(axisMax)}}</span></div></div>`;
+}}
+function evChargerPie(publicChargers, governmentChargers) {{
+  const publicValue = num(publicChargers);
+  const governmentValue = num(governmentChargers);
+  const total = publicValue + governmentValue;
+  const publicDeg = total ? publicValue / total * 360 : 0;
+  const governmentDeg = total ? 360 - publicDeg : 0;
+  const background = total ? `conic-gradient(#074BA9 0deg ${{publicDeg}}deg, #5A9FD3 ${{publicDeg}}deg 360deg)` : '#D8DEE9';
+  const publicPct = total ? Math.round(publicValue / total * 100) : 0;
+  const governmentPct = total ? 100 - publicPct : 0;
+  const publicMid = (publicDeg / 2 - 90) * Math.PI / 180;
+  const governmentMid = (publicDeg + governmentDeg / 2 - 90) * Math.PI / 180;
+  const labelRadius = 48;
+  const publicLabel = total && publicValue ? `<span class="ev-pie-label" style="left:${{69 + Math.cos(publicMid) * labelRadius}}px; top:${{69 + Math.sin(publicMid) * labelRadius}}px;">${{publicPct}}%</span>` : '';
+  const governmentLabel = total && governmentValue ? `<span class="ev-pie-label" style="left:${{69 + Math.cos(governmentMid) * labelRadius}}px; top:${{69 + Math.sin(governmentMid) * labelRadius}}px;">${{governmentPct}}%</span>` : '';
+  return `<div class="ev-pie-area"><div class="ev-pie" style="background:${{background}}" aria-label="${{fmt.format(total)}} total EV chargers">${{publicLabel}}${{governmentLabel}}<div class="ev-pie-center"></div></div><div class="ev-pie-legend"><div class="ev-pie-legend-item"><span class="ev-pie-swatch" style="background:#074BA9"></span><span>Public chargers</span><strong>${{fmt.format(publicValue)}}</strong></div><div class="ev-pie-legend-item"><span class="ev-pie-swatch" style="background:#5A9FD3"></span><span>Government chargers</span><strong>${{fmt.format(governmentValue)}}</strong></div><div class="ev-pie-legend-item"><span class="ev-pie-swatch" style="background:#D8DEE9"></span><span>Total EV chargers</span><strong>${{fmt.format(total)}}</strong></div></div></div>`;
+}}
+function renderHigherInstitutions(r) {{
+  const resources = DATA.higherInstitutions[r.Municipality] || [];
+  if (!resources.length) return '<p class="institution-empty">No higher institutions listed for this municipality.</p>';
+  return `<ul class="institution-links">${{resources.map(resource => {{
+    const name = escapeHtml(resource.name);
+    const link = escapeHtml(resource.link);
+    const icon = link ? `<a class="institution-link-icon" href="${{link}}" target="_blank" rel="noopener" aria-label="${{name}} website">&#8599;</a>` : `<span class="institution-link-icon" aria-hidden="true">&#8599;</span>`;
+    const title = link ? `<a class="institution-link-title" href="${{link}}" target="_blank" rel="noopener">${{name}}</a>` : `<span class="institution-link-title">${{name}}</span>`;
+    return `<li>${{icon}}<div>${{title}}</div></li>`;
+  }}).join('')}}</ul>`;
+}}
+function statusBadge(value) {{
+  const text = valueText(value);
+  const lower = text.toLowerCase();
+  const cls = lower === 'yes' || lower.includes('community') || lower.includes('both') || lower.includes('government') ? 'yes' : lower === 'no' || lower.includes('not applicable') || lower.includes('no goal') ? 'no' : 'neutral';
+  const symbol = cls === 'yes' ? '✓' : cls === 'no' ? '×' : '';
+  return `<span class="status-badge ${{cls}}">${{symbol ? `${{symbol}} ` : ''}}${{text}}</span>`;
+}}
+function indicatorCard(field, r) {{
+  return `<div class="indicator-card"><div class="indicator-title">${{labelFor(field)}}</div>${{statusBadge(r[field])}}</div>`;
+}}
+function checklist(fields, r) {{
+  return `<div class="checklist">${{fields.map(field => `<div class="check-row"><div class="check-label">${{labelFor(field)}}</div>${{statusBadge(r[field])}}</div>`).join('')}}</div>`;
+}}
+function ratioProgress(title, met, total) {{
+  const safeTotal = Math.max(num(total), 0);
+  const safeMet = Math.max(0, Math.min(num(met), safeTotal));
+  const pct = safeTotal ? Math.round(safeMet / safeTotal * 100) : 0;
+  return `<div class="progress-card"><div class="progress-title">${{title}}</div><div class="progress-value">${{fmt.format(safeMet)}} / ${{fmt.format(safeTotal)}} (${{pct}}%)</div><div class="progress-track"><div class="progress-fill" style="width:${{pct}}%"></div></div></div>`;
+}}
+function detailBox(title, content) {{
+  return `<details class="detail-box"><summary>${{title}}</summary><div class="detail-content">${{content}}</div></details>`;
+}}
+function sectionBlock(title, body) {{
+  return `<h4>${{title}}</h4>${{body}}`;
+}}
+function kpiHtml(title, value, note, tooltipKey='') {{
+  const tooltip = note ? ` data-tooltip-title="${{escapeHtml(value)}}" data-tooltip-subtitle="${{escapeHtml(title)}}" data-tooltip-value="${{escapeHtml(note)}}" aria-label="${{escapeHtml(`${{title}}: ${{value}}. ${{note}}`)}}"` : '';
+  return `<div class="metric"${{tooltip}}><div class="metric-title">${{title}}${{tooltipKey ? infoTip(tooltipKey, title) : ''}}</div><div class="metric-value">${{value}}</div></div>`;
+}}
+function renderOverview() {{
+  const o = DATA.overview;
+  el('overview-kpis').innerHTML = [
+    kpiHtml('Average NYSERDA CEC Points', fmt.format(o.averageNYSERDAPoints), 'Out of 30,200 possible across assessed categories.', 'average_nyserda_points'),
+    kpiHtml('Have Climate Action Plans', `${{o.climateActionPlanPercent}}%`, '', 'climate_action_plan'),
+    kpiHtml('Have Renewable Energy Goals', `${{o.renewableEnergyGoalPercent}}%`, '', 'renewable_energy_goal'),
+    kpiHtml('Public EV Chargers Recorded', fmt.format(o.publicEVChargers), '', 'ev_chargers'),
+    kpiHtml('Have Clean Energy Workforce Programs', `${{o.cleanEnergyWorkforceProgramPercent}}%`, '', 'workforce_program')
+  ].join('');
+  const ranked = [...DATA.records].sort((a,b)=>num(b.NYSERDA_Total)-num(a.NYSERDA_Total));
+  renderCecRanking(ranked);
+  renderCecDistribution();
+  renderCecStatusSummary();
+}}
+function cecStatus(record) {{
+  const value = String(record.NYSERDA_1Q_Designation || '').trim().toLowerCase();
+  if (value === 'designated') return 'Designated';
+  if (value === 'participating') return 'In Progress';
+  return 'Not Started';
+}}
+function cecStatusClass(status) {{
+  return status.toLowerCase().replace(/\\s+/g, '-');
+}}
+function climateSmartStatusClass(value) {{
+  const text = String(value ?? '').trim().toLowerCase();
+  if (text.includes('bronze') || text.includes('silver') || text.includes('gold')) return 'success';
+  if (text.includes('registered')) return 'info';
+  if (text.includes('not') || text === 'no' || text === '') return 'neutral';
+  return 'info';
+}}
+function cecPillClass(status) {{
+  if (status === 'Designated') return 'success';
+  if (status === 'In Progress') return 'info';
+  return 'neutral';
+}}
+function starCount(value) {{
+  const text = String(value ?? '').trim().toLowerCase();
+  if (!text || text.includes('no')) return 0;
+  const match = text.match(/\\d+/);
+  return match ? Number(match[0]) : 0;
+}}
+function starIcons(value) {{
+  const count = Math.max(0, Math.min(5, starCount(value)));
+  return count ? '★'.repeat(count) : '';
+}}
+function starRatingLabel(value) {{
+  const count = starCount(value);
+  if (!count) return 'No stars';
+  return `${{count}} ${{count === 1 ? 'star' : 'stars'}} ${{starIcons(value)}}`;
+}}
+function starRatingHtml(value) {{
+  const count = Math.max(0, Math.min(5, starCount(value)));
+  const label = count ? `${{count}} ${{count === 1 ? 'star' : 'stars'}}` : 'No stars';
+  const stars = Array.from({{length:5}}, (_, index) => `<span class="profile-star ${{index < count ? 'filled' : 'empty'}}">★</span>`).join('');
+  return `<span class="profile-star-icons" aria-hidden="true">${{stars}}</span><span class="profile-star-text">${{escapeHtml(label)}}</span>`;
+}}
+function countyFor(municipality) {{
+  const suffolk = new Set(['Babylon','Brookhaven','East Hampton','Huntington','Islip','Riverhead','Shelter Island','Smithtown','Southampton','Southold']);
+  return suffolk.has(municipality) ? 'Suffolk County' : 'Nassau County';
+}}
+function renderBars(target, rows, field, compact=false) {{
+  const max = Math.max(...rows.map(r=>num(r[field])), 1);
+  el(target).innerHTML = rows.map(r => `<div class="bar-row"><div class="bar-label">${{r.Municipality}}</div><div class="bar-track"><div class="bar-fill" style="width:${{Math.max(2, num(r[field])/max*100)}}%"></div></div><div class="bar-value">${{fmt.format(num(r[field]))}}</div></div>`).join('');
+}}
+function renderCecRanking(rows) {{
+  const maxPoints = Math.max(...rows.map(r=>num(r.NYSERDA_Total)), 1);
+  const axisMax = Math.ceil(maxPoints / 500) * 500;
+  const axisMid = Math.round(axisMax / 2);
+  const body = rows.map((r, index) => {{
+    const cls = index < Math.ceil(rows.length / 3) ? 'high' : index < Math.ceil(rows.length * 2 / 3) ? 'middle' : 'low';
+    const value = num(r.NYSERDA_Total);
+    const width = Math.max(1, value / axisMax * 100);
+    return `<div class="cec-rank-row" data-tooltip-title="${{escapeHtml(r.Municipality)}}" data-tooltip-subtitle="${{escapeHtml(countyFor(r.Municipality))}}" data-tooltip-value="${{escapeHtml(fmt.format(value))}} CEC points"><div class="cec-rank-label">${{r.Municipality}}</div><div class="cec-rank-track"><div class="cec-rank-bar ${{cls}}" style="width:${{width}}%"></div></div></div>`;
+  }}).join('');
+  el('rank-chart').innerHTML = `<div class="cec-rank-plot">${{body}}<div class="cec-rank-axis"><span>0</span><span>${{fmt.format(axisMid)}}</span><span>${{fmt.format(axisMax)}}</span></div></div>`;
+}}
+function renderCecDistribution() {{
+  const values = DATA.records.map(r=>num(r.NYSERDA_Total));
+  const bins = [
+    {{label:'0-499', min:0, max:499}},
+    {{label:'500-999', min:500, max:999}},
+    {{label:'1,000-1,499', min:1000, max:1499}},
+    {{label:'1,500-1,999', min:1500, max:1999}},
+    {{label:'2,000-2,999', min:2000, max:2999}},
+    {{label:'3,000+', min:3000, max:Infinity}}
+  ];
+  const counts = bins.map(bin => values.filter(v => v >= bin.min && v <= bin.max).length);
+  const max = Math.max(...counts, 1);
+  const yMax = Math.max(4, Math.ceil(max / 2) * 2);
+  const ticks = [0, Math.round(yMax / 2), yMax];
+  const bars = bins.map((bin, i) => {{
+    const height = counts[i] / yMax * 132;
+    return `<div class="cec-dist-bin"><div class="cec-dist-bar" style="height:${{Math.max(2, height)}}px" data-tooltip-title="${{escapeHtml(bin.label + ' points')}}" data-tooltip-value="${{escapeHtml(counts[i] + (counts[i] === 1 ? ' municipality' : ' municipalities'))}}"></div><div class="cec-dist-label">${{bin.label}}</div></div>`;
+  }}).join('');
+  el('histogram').innerHTML = `<div class="cec-dist-y-axis">${{ticks.map(t=>`<span>${{t}}</span>`).join('')}}</div>${{bars}}`;
+}}
+function renderCecStatusSummary() {{
+  const statuses = [
+    {{label:'Designated', cls:'designated'}},
+    {{label:'In Progress', cls:'in-progress'}},
+    {{label:'Not Started', cls:'not-started'}}
+  ];
+  const total = DATA.records.length || 1;
+  const rows = statuses.map(status => {{
+    const count = DATA.records.filter(r => cecStatus(r) === status.label).length;
+    const tipKey = status.cls === 'designated' ? 'designated' : status.cls === 'in-progress' ? 'in_progress' : 'not_started';
+    return `<div class="cec-status-row"><div class="cec-status-head"><span>${{status.label}}${{infoTip(tipKey, status.label)}}</span><span class="cec-status-count">${{count}} of ${{total}}</span></div><div class="cec-status-track"><div class="cec-status-fill ${{status.cls}}" style="width:${{count / total * 100}}%"></div></div></div>`;
+  }}).join('');
+  el('cec-status-summary').innerHTML = rows;
+}}
+function selectedRecord() {{ return DATA.records.find(r=>r.Municipality === el('municipality-select').value) || DATA.records[0]; }}
+function renderMunicipalityProfile(r) {{
+  const points = num(r.NYSERDA_Total);
+  const designationStatus = cecStatus(r);
+  el('municipality-profile-card').innerHTML = `
+    <div class="municipality-profile-top">
+      <div>
+        <h3 class="municipality-profile-name">${{escapeHtml(r.Municipality)}}</h3>
+        <p class="municipality-profile-subtitle">${{escapeHtml(countyFor(r.Municipality))}} · ${{municipalityType(r.Municipality)}}</p>
+      </div>
+    </div>
+    <div class="profile-pill-row">
+      <span class="profile-status-pill status-pill ${{cecPillClass(designationStatus)}}">CEC Designation: ${{escapeHtml(designationStatus)}}${{infoTip('cec_designation_status', 'CEC Designation Status')}}</span>
+      <span class="profile-status-pill profile-star-pill status-pill info">${{starRatingHtml(r['NYSERDA_1R_StarDesignation'])}}</span>
+    </div>
+    <div class="profile-score-row">
+      <div class="profile-score">${{fmt.format(points)}} <span class="profile-score-unit">CEC points</span></div>
+    </div>
+    <div class="profile-rank">Rank #${{cecRankFor(r)}} among ${{DATA.records.length}} municipalities</div>
+  `;
+}}
+function renderExplorerComparison(r) {{
+  const rows = [...DATA.records].sort((a,b)=>num(b.NYSERDA_Total)-num(a.NYSERDA_Total) || a.Municipality.localeCompare(b.Municipality));
+  const axisMax = cecAxisMax();
+  const axisMid = Math.round(axisMax / 2);
+  el('explorer-comparison-subtitle').textContent = `${{r.Municipality}} highlighted in blue. Rank #${{cecRankFor(r)}}.`;
+  const body = rows.map(item => {{
+    const value = num(item.NYSERDA_Total);
+    const width = Math.max(1, Math.min(100, value / axisMax * 100));
+    const isSelected = item.Municipality === r.Municipality;
+    return `<div class="explorer-compare-row${{isSelected ? ' highlight' : ''}}" data-tooltip-title="${{escapeHtml(item.Municipality)}}" data-tooltip-subtitle="${{escapeHtml(countyFor(item.Municipality))}}" data-tooltip-value="${{escapeHtml(fmt.format(value))}} CEC points"><div class="explorer-compare-label">${{escapeHtml(item.Municipality)}}</div><div class="explorer-compare-track"><div class="explorer-compare-bar${{isSelected ? ' selected' : ''}}" style="width:${{width}}%"></div></div></div>`;
+  }}).join('');
+  el('explorer-comparison-chart').innerHTML = `<div class="explorer-compare-plot">${{body}}<div class="explorer-compare-axis"><span>0</span><span>${{fmt.format(axisMid)}}</span><span>${{fmt.format(axisMax)}}</span></div></div>`;
+}}
+function policyValue(value, adoptedText='Yes') {{
+  const text = valueText(value);
+  const positive = ['yes', 'adopted', 'registered', 'bronze', 'silver', 'gold'].some(token => text.toLowerCase().includes(token));
+  const negative = ['no', 'not applicable', 'no goal', 'not participating'].some(token => text.toLowerCase().includes(token));
+  const display = text === 'Yes' && adoptedText ? adoptedText : text;
+  return {{display, positive, negative}};
+}}
+function statusForDisplay(display) {{
+  const text = String(display ?? '').trim().toLowerCase();
+  if (['yes', 'adopted', 'both', 'community', 'government only', 'government operations'].includes(text) || text.includes('registered')) return 'positive';
+  if (['no', 'not applicable', 'no goal', 'not participating', 'none'].includes(text)) return 'negative';
+  return 'neutral';
+}}
+function indicatorListRow(label, display, status='neutral') {{
+  const cls = status === 'positive' ? ' positive' : status === 'negative' ? ' negative' : '';
+  const icon = status === 'positive' ? '<span class="indicator-row-check">✓</span>' : status === 'negative' ? '<span class="indicator-row-x">×</span>' : '';
+  return `<div class="indicator-row"><div class="indicator-row-label">${{label}}</div><div class="indicator-row-value${{cls}}">${{icon}}${{escapeHtml(display)}}</div></div>`;
+}}
+function statusRow(label, value, formatter=valueText) {{
+  const display = formatter(value);
+  return indicatorListRow(label, display, statusForDisplay(display));
+}}
+function metricRow(label, value, formatter=(value)=>fmt.format(num(value))) {{
+  return indicatorListRow(label, formatter(value), 'neutral');
+}}
+function categoryOverview(blurb, rows) {{
+  return `<div class="planning-indicators category-overview"><p>${{blurb}}</p><div class="indicator-list">${{rows.join('')}}</div></div>`;
+}}
+function renderPlanningIndicators(r) {{
+  const climatePlan = policyValue(r['Climate Action Plan Status'], 'Adopted');
+  const renewableGoal = policyValue(r['Renewable Energy Goal Status'], 'Yes');
+  const rows = [
+    indicatorListRow(`Climate Action Plan ${{infoTip('climate_action_plan', 'Climate Action Plan')}}`, climatePlan.display, climatePlan.positive ? 'positive' : climatePlan.negative ? 'negative' : 'neutral'),
+    indicatorListRow(`Renewable Energy Goal ${{infoTip('renewable_energy_goal', 'Renewable Energy Goal')}}`, renewableGoal.display, renewableGoal.positive ? 'positive' : renewableGoal.negative ? 'negative' : 'neutral'),
+    indicatorListRow(`Public EV Chargers Reported ${{infoTip('ev_chargers', 'Electric Vehicle Chargers')}}`, fmt.format(num(r['Public EV Chargers']))),
+    indicatorListRow('Public Transportation Lines', fmt.format(num(r['Public Transportation Lines']))),
+    indicatorListRow('Public Transportation Riders', percentValue(r['EV_8J_TransitUsers'])),
+    indicatorListRow('Environmental, Climate, and Sustainability Organizations', fmt.format(num(r['Environmental, Climate, and Sustainability NGO Count']))),
+    indicatorListRow(`Youth Employment Programs ${{infoTip('workforce_program', 'Workforce Program Availability')}}`, fmt.format(num(r['WORK_11L_YouthEmploymentPrograms'])))
+  ].join('');
+  el('selected-kpis').innerHTML = `<h3>Town Overview</h3><p>Key status indicators for climate planning, renewable energy commitments, transportation, and community infrastructure.</p><div class="indicator-list">${{rows}}</div>`;
+}}
+function renderExplorer() {{
+  const r = selectedRecord();
+  el('municipality-map').src = `https://www.google.com/maps?q=${{encodeURIComponent(r.Municipality + ', Long Island, NY')}}&output=embed`;
+  renderMunicipalityProfile(r);
+  renderExplorerComparison(r);
+  renderPlanningIndicators(r);
+  renderDonut(r);
+  renderNysTable(r);
+  renderCategories(r);
+}}
+function renderDonut(r) {{
+  const parts = DATA.nysPointFields.map((field, i) => ({{field, label:labelFor(field), value:num(r[field]), color:colors[i % colors.length]}})).filter(x=>x.value>0);
+  const total = parts.reduce((sum,p)=>sum+p.value,0);
+  if (!total) {{
+    el('donut').style.background = '#e5e7eb';
+    el('donut').innerHTML = '';
+    el('donut-legend').innerHTML = '<p>No NYSERDA point values are recorded for this municipality.</p>';
+    return;
+  }}
+  let start = 0;
+  const stops = parts.map(p => {{
+    const end = start + p.value / total * 360;
+    const stop = `${{p.color}} ${{start}}deg ${{end}}deg`;
+    p.midAngle = start + (end - start) / 2;
+    p.percent = Math.round(p.value / total * 100);
+    start = end;
+    return stop;
+  }});
+  el('donut').style.background = `conic-gradient(${{stops.join(', ')}})`;
+  el('donut').innerHTML = parts.map(p => {{
+    const radians = (p.midAngle - 90) * Math.PI / 180;
+    const radius = 74;
+    const x = 105 + Math.cos(radians) * radius;
+    const y = 105 + Math.sin(radians) * radius;
+    return `<span class="donut-label" style="left:${{x}}px; top:${{y}}px;">${{p.percent}}%</span>`;
+  }}).join('');
+  el('donut-legend').innerHTML = parts.map(p => `<div class="legend-item"><span class="swatch" style="background:${{p.color}}"></span><span>${{p.label}}</span><strong>${{fmt.format(p.value)}}</strong></div>`).join('');
+}}
+function renderNysTable(r) {{
+  function pointStatus(earned, maximum) {{
+    if (maximum && earned >= maximum) return {{label:'Completed', cls:'completed'}};
+    if (earned > 0) return {{label:'In Progress', cls:'in-progress'}};
+    return {{label:'Not Started', cls:'not-started'}};
+  }}
+  let totalEarned = 0;
+  let totalPossible = 0;
+  const rows = DATA.nysPointFields.map(field => {{
+    const max = DATA.nysMaxPoints[field];
+    const earned = num(r[field]);
+    const possible = num(max);
+    totalEarned += earned;
+    totalPossible += possible;
+    const status = pointStatus(earned, possible);
+    const maxText = max === '' || max === null || max === undefined ? '' : fmt.format(num(max));
+    return `<tr><td>${{labelFor(field)}}</td><td><span class="nys-status ${{status.cls}}">${{status.label}}</span></td><td>${{fmt.format(earned)}}</td><td>${{maxText}}</td></tr>`;
+  }}).join('');
+  const totalRow = `<tr class="nys-total-row"><td>Total</td><td></td><td>${{fmt.format(totalEarned)}}</td><td>${{fmt.format(totalPossible)}}</td></tr>`;
+  el('nys-points-table').innerHTML = `<thead><tr><th>NYSERDA Action</th><th>Status</th><th>Points Earned</th><th>Maximum Points Possible</th></tr></thead><tbody>${{rows}}${{totalRow}}</tbody>`;
+}}
+function renderMetricToggle() {{
+  el('metric-toggle').innerHTML = metricOptions.map((m,i)=>`<button class="${{i===0?'active':''}}" data-field="${{m.field}}">${{m.label}}</button>`).join('');
+  [...el('metric-toggle').querySelectorAll('button')].forEach(btn => btn.addEventListener('click', () => {{
+    selectedMetric = metricOptions.find(m=>m.field===btn.dataset.field);
+    [...el('metric-toggle').querySelectorAll('button')].forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderBenchmark();
+  }}));
+}}
+function statusRankValue(value) {{
+  const t = String(value ?? '').toLowerCase();
+  if (t.includes('bronze') || t.includes('designated') || t === 'yes' || t.includes('community') || t.includes('government')) return 1;
+  if (presentValue(value)) return 0.5;
+  return 0;
+}}
+function renderBenchmark() {{
+  const field = selectedMetric.field;
+  let rows = [...DATA.records];
+  if (selectedMetric.type === 'number') rows.sort((a,b)=>num(b[field])-num(a[field]) || a.Municipality.localeCompare(b.Municipality));
+  else rows.sort((a,b)=>statusRankValue(b[field])-statusRankValue(a[field]) || String(a[field]).localeCompare(String(b[field])) || a.Municipality.localeCompare(b.Municipality));
+  const selected = selectedRecord().Municipality;
+  if (selectedMetric.type === 'number') {{
+    const max = Math.max(...rows.map(r=>num(r[field])),1);
+    el('benchmark-chart').innerHTML = rows.map((r,i)=>`<div class="bar-row"><div class="bar-label">${{i+1}}. ${{r.Municipality}}${{r.Municipality===selected?' (selected)':''}}</div><div class="bar-track"><div class="bar-fill" style="width:${{Math.max(2,num(r[field])/max*100)}}%"></div></div><div class="bar-value">${{fmt.format(num(r[field]))}}</div></div>`).join('');
+  }} else {{
+    el('benchmark-chart').innerHTML = `<table><thead><tr><th>Rank Group</th><th>Municipality</th><th>${{selectedMetric.label}}</th></tr></thead><tbody>${{rows.map((r,i)=>`<tr><td>${{i+1}}</td><td>${{r.Municipality}}${{r.Municipality===selected?' (selected)':''}}</td><td>${{valueText(r[field])}}</td></tr>`).join('')}}</tbody></table>`;
+  }}
+}}
+function renderCategories(r) {{
+  const renderers = {{
+    'Energy and Renewable Programs': renderEnergyCategory,
+    'Buildings': renderBuildingsCategory,
+    'EV Infrastructure': renderEvCategory,
+    'Workforce Development': renderWorkforceCategory,
+    'Housing and Community Resources': renderHousingCategory
+  }};
+  const sectionHtml = (cat) => {{
+    const body = (renderers[cat.name] || renderGenericCategory)(r, cat);
+    const heading = ['Buildings','Energy and Renewable Programs','EV Infrastructure','Workforce Development','Housing and Community Resources'].includes(cat.name) ? '' : `<h3>${{cat.name}}</h3>`;
+    return `<section class="category">${{heading}}<div class="content">${{body}}</div></section>`;
+  }};
+  const categories = DATA.displayCategories;
+  const energy = categories.find(cat => cat.name === 'Energy and Renewable Programs');
+  const buildings = categories.find(cat => cat.name === 'Buildings');
+  const paired = energy && buildings ? `<div class="category-pair">${{sectionHtml(energy)}}${{sectionHtml(buildings)}}</div>` : '';
+  const rest = categories.filter(cat => !['Energy and Renewable Programs','Buildings'].includes(cat.name)).map(sectionHtml).join('');
+  el('category-sections').innerHTML = `${{paired}}${{rest}}`;
+}}
+function renderEnergyCategory(r) {{
+  const indicators = ['ENERGY_6N_RenewableGoal','ENERGY_6A_GHGInventory','ENERGY_6I_LargeSolar','ENERGY_6J_WindProjects','ENERGY_6L_PACE'];
+  const checks = ['ENERGY_6C_Benchmarking','ENERGY_6B_GovOnlyInventory','ENERGY_6D_EnergyCode','ENERGY_6E_EfficiencyIncentives','ENERGY_6O_RenewableIncentives'];
+  const rows = [
+    ...indicators.map(field => statusRow(labelFor(field), r[field])),
+    ...checks.map(field => statusRow(labelFor(field), r[field]))
+  ];
+  return `<div class="building-panel"><div class="building-panel-title">Energy and Renewable Programs</div><div class="building-panel-intro"><p>${{categoryBlurb('Energy and Renewable Programs')}}</p></div><div class="building-panel-body"><div class="indicator-list building-policy-list">${{rows.join('')}}</div></div></div>`;
+}}
+function renderBuildingsCategory(r) {{
+  const avgTotal = averageFor('BUILD_7C_TotalLEED');
+  const rows = [
+    statusRow(labelFor('BUILD_7E_LEEDPolicy'), r['BUILD_7E_LEEDPolicy']),
+    statusRow(labelFor('BUILD_7F_LEEDIncentives'), r['BUILD_7F_LEEDIncentives']),
+    statusRow(labelFor('BUILD_7I_HeatPumpIncentives'), r['BUILD_7I_HeatPumpIncentives'])
+  ];
+  const scores = [
+    buildingScoreCard('Total LEED-certified', fmt.format(num(r['BUILD_7C_TotalLEED'])), percentVsAverageMeta('BUILD_7C_TotalLEED', r)),
+    buildingScoreCard('Government LEED-certified', valueText(r['BUILD_7A_GovLEED']) === 'Not applicable' ? 'N/A' : fmt.format(num(r['BUILD_7A_GovLEED'])), valueText(r['BUILD_7A_GovLEED']) === 'Not applicable' ? null : percentVsAverageMeta('BUILD_7A_GovLEED', r)),
+    buildingScoreCard('Avg total LEED-certified', formatOneDecimal(avgTotal))
+  ].join('');
+  return `<div class="building-panel"><div class="building-panel-title">Buildings</div><div class="building-panel-intro"><p>${{categoryBlurb('Buildings')}}</p></div><div class="building-panel-body"><div class="building-score-grid">${{scores}}</div><p class="average-disclaimer">Average values and comparisons are calculated across all municipalities.</p><div class="indicator-list building-policy-list">${{rows.join('')}}</div></div></div>`;
+}}
+function renderEvCategory(r) {{
+  const scoreCards = [
+    buildingScoreCard('Public chargers', fmt.format(num(r['EV_8F_PublicChargers'])), percentVsAverageMeta('EV_8F_PublicChargers', r)),
+    buildingScoreCard('Government chargers', fmt.format(num(r['EV_8C_GovChargers'])), percentVsAverageMeta('EV_8C_GovChargers', r)),
+    buildingScoreCard('Total EVs', fmt.format(num(r['EV_8D_TotalEVs'])), percentVsAverageMeta('EV_8D_TotalEVs', r)),
+    buildingScoreCard('Transit riders', percentValue(r['EV_8J_TransitUsers']), percentVsAverageMeta('EV_8J_TransitUsers', r))
+  ].join('');
+  const rows = [
+    metricRow(labelFor('EV_8I_TransitLines'), r['EV_8I_TransitLines']),
+    statusRow(labelFor('EV_8G_EVAdoptionGoal'), r['EV_8G_EVAdoptionGoal']),
+    statusRow(labelFor('EV_8H_EVIncentives'), r['EV_8H_EVIncentives'])
+  ];
+  return `<div class="ev-panel"><div class="ev-panel-head"><h3 class="ev-panel-title">Electric Vehicle (EV) Infrastructure</h3></div><div class="ev-panel-intro"><p>${{categoryBlurb('EV Infrastructure')}}</p></div><div class="ev-panel-body">${{evChargerPie(r['EV_8F_PublicChargers'], r['EV_8C_GovChargers'])}}<div class="ev-metrics-area">${{scoreCards}}<p class="average-disclaimer">Average comparisons are calculated across all municipalities.</p><div class="indicator-list ev-policy-list">${{rows.join('')}}</div></div></div></div>`;
+}}
+function renderWorkforceCategory(r) {{
+  const educationScore = buildingScoreCard('Higher institutions', fmt.format(num(r['SCHOOL_4D_TotalColleges'])), percentVsAverageMeta('SCHOOL_4D_TotalColleges', r));
+  const employmentScores = [
+    buildingScoreCard('Trade unions', fmt.format(num(r['WORK_11A_TradeUnions'])), percentVsAverageMeta('WORK_11A_TradeUnions', r)),
+    buildingScoreCard('Community workforce projects', fmt.format(num(r['WORK_11H_CommunityProjects'])), percentVsAverageMeta('WORK_11H_CommunityProjects', r)),
+    buildingScoreCard('Housing shelters', fmt.format(num(r['WORK_11I_HousingShelters'])), percentVsAverageMeta('WORK_11I_HousingShelters', r)),
+    buildingScoreCard('Youth employment programs', fmt.format(num(r['WORK_11L_YouthEmploymentPrograms'])), percentVsAverageMeta('WORK_11L_YouthEmploymentPrograms', r))
+  ].join('');
+  return `<div class="workforce-panel"><div class="workforce-panel-head"><h3 class="workforce-panel-title">Workforce Development</h3><p class="workforce-panel-description">${{categoryBlurb('Workforce Development')}}</p></div><div class="workforce-panel-body"><div class="workforce-column education-column"><div class="workforce-subhead">Education pipeline</div><div class="workforce-education-top">${{educationScore}}<div class="workforce-institution-summary">${{renderHigherInstitutions(r)}}</div></div></div><div class="workforce-column employment-column"><div class="workforce-subhead">Employment ecosystem</div><div class="workforce-metric-grid">${{employmentScores}}</div><p class="average-disclaimer">Average comparisons are calculated across all municipalities.</p></div></div></div>`;
+}}
+function renderHousingCategory(r) {{
+  const scores = [
+    buildingScoreCard('Mold and Asbestos Removal Businesses', fmt.format(num(r['HOUSING_12B_RemediationBusinesses'])), percentVsAverageMeta('HOUSING_12B_RemediationBusinesses', r)),
+    buildingScoreCard('Food pantries', fmt.format(num(r['HOUSING_12E_FoodPantries'])), percentVsAverageMeta('HOUSING_12E_FoodPantries', r)),
+    buildingScoreCard('Legal rental units', fmt.format(num(r['HOUSING_12F_LegalRentals'])), percentVsAverageMeta('HOUSING_12F_LegalRentals', r)),
+    buildingScoreCard('EBT-accepting markets', fmt.format(num(r['HOUSING_12G_EBTAcceptingMarkets'])), percentVsAverageMeta('HOUSING_12G_EBTAcceptingMarkets', r))
+  ].join('');
+  const rows = [
+    statusRow(labelFor('HOUSING_12H_RepairCafes'), yesNoValue(r['HOUSING_12H_RepairCafes'])),
+    metricRow(labelFor('HOUSING_12C_HomesNeedRoofRepair'), valueText(r['HOUSING_12C_HomesNeedRoofRepair']), value => value)
+  ];
+  return `<div class="building-panel housing-panel"><div class="building-panel-title">Housing and Community Resources</div><div class="building-panel-intro"><p>${{categoryBlurb('Housing')}}</p></div><div class="building-panel-body"><div class="building-score-grid housing-score-grid">${{scores}}</div><p class="average-disclaimer">Average values and comparisons are calculated across all municipalities.</p><div class="indicator-list building-policy-list">${{rows.join('')}}</div></div></div>`;
+}}
+function renderGenericCategory(r, cat) {{
+  return `<div class="category-dashboard"><p class="category-blurb">${{categoryBlurb(cat.name)}}</p><div class="badge-grid">${{cat.fields.map(field => indicatorCard(field, r)).join('')}}</div></div>`;
+}}
+function categoryBlurb(name) {{
+  if (name.includes('Energy')) return 'Renewable energy programs can help communities reduce emissions, improve long-term energy resilience, and support local clean energy investment.';
+  if (name.includes('EV Infrastructure')) return 'Public charging infrastructure supports electric vehicle adoption and helps reduce transportation-related emissions.';
+  if (name.includes('Climate Plans')) return 'Climate action plans help municipalities organize goals, policies, and projects for reducing emissions and preparing for climate impacts.';
+  if (name.includes('Buildings')) return 'Leadership in Energy and Environmental Design (LEED) is the world\\'s most widely used green building rating system. Developed by the <a href="https://www.usgbc.org/leed" target="_blank" rel="noopener">U.S. Green Building Council</a> (USGBC), LEED provides a framework for healthy, highly efficient, cost-saving sustainable buildings and applies to virtually all building types and phases.';
+  if (name.includes('Workforce')) return 'Clean energy workforce programs help prepare residents for emerging jobs in energy, sustainability, buildings, and infrastructure.';
+  if (name.includes('Housing')) return 'Housing and community resource indicators help show how municipalities are preparing residents and buildings for a cleaner and more resilient future.';
+  return 'These retained responses are shown for review before public-facing fields are narrowed in a future version.';
+}}
+function sourceKey(source) {{
+  return [source.municipality, source.category, source.sourceName].map(value => String(value || '').trim().toLowerCase()).join('||');
+}}
+const SOURCE_GROUP_COUNTS = DATA.sources.reduce((acc, source) => {{
+  const key = sourceKey(source);
+  acc[key] = (acc[key] || 0) + 1;
+  return acc;
+}}, {{}});
+const SOURCE_GROUP_INDEXES = {{}};
+const SOURCES_WITH_INDEXES = DATA.sources.map(source => {{
+  const key = sourceKey(source);
+  SOURCE_GROUP_INDEXES[key] = (SOURCE_GROUP_INDEXES[key] || 0) + 1;
+  return {{...source, duplicateCount: SOURCE_GROUP_COUNTS[key], duplicateIndex: SOURCE_GROUP_INDEXES[key]}};
+}});
+function uniqueSorted(values) {{
+  return [...new Set(values.filter(value => String(value || '').trim()))].sort((a,b)=>a.localeCompare(b));
+}}
+function renderSourceFilters() {{
+  const municipalitySelect = el('source-municipality-filter');
+  const categorySelect = el('source-category-filter');
+  if (!municipalitySelect || !categorySelect) return;
+  const municipalities = uniqueSorted(SOURCES_WITH_INDEXES.map(source => source.municipality));
+  const categories = uniqueSorted(SOURCES_WITH_INDEXES.map(source => source.category));
+  municipalitySelect.innerHTML = '<option value="">All municipalities</option>' + municipalities.map(value => `<option value="${{escapeHtml(value)}}">${{escapeHtml(value)}}</option>`).join('');
+  categorySelect.innerHTML = '<option value="">All categories</option>' + categories.map(value => `<option value="${{escapeHtml(value)}}">${{escapeHtml(value)}}</option>`).join('');
+}}
+function renderSources() {{
+  const municipalitySelect = el('source-municipality-filter');
+  const categorySelect = el('source-category-filter');
+  const table = el('sources-table');
+  const empty = el('sources-empty');
+  const summary = el('sources-summary');
+  if (!municipalitySelect || !categorySelect || !table || !empty || !summary) return;
+  const municipality = municipalitySelect.value;
+  const category = categorySelect.value;
+  const filtered = SOURCES_WITH_INDEXES.filter(source => {{
+    const municipalityMatch = !municipality || source.municipality === municipality;
+    const categoryMatch = !category || source.category === category;
+    return municipalityMatch && categoryMatch;
+  }});
+  table.querySelector('tbody').innerHTML = filtered.map(source => {{
+    const name = escapeHtml(source.sourceName || 'Source');
+    const note = source.duplicateCount > 1 ? `<span class="source-entry-note">Source ${{source.duplicateIndex}}</span>` : '';
+    const url = String(source.url || '').trim();
+    const sourceCell = url
+      ? `<a href="${{escapeHtml(url)}}" target="_blank" rel="noopener noreferrer">${{name}}</a>${{note}}`
+      : `${{name}}${{note}}`;
+    return `<tr><td>${{escapeHtml(source.municipality || 'Not specified')}}</td><td>${{escapeHtml(source.category || 'Not specified')}}</td><td>${{sourceCell}}</td></tr>`;
+  }}).join('');
+  empty.hidden = filtered.length > 0;
+  table.parentElement.hidden = filtered.length === 0;
+  const total = SOURCES_WITH_INDEXES.length;
+  summary.textContent = filtered.length === total
+    ? `${{fmt.format(total)}} sources shown.`
+    : `${{fmt.format(filtered.length)}} of ${{fmt.format(total)}} sources shown.`;
+}}
+el('municipality-select').innerHTML = DATA.records.map(r=>`<option value="${{r.Municipality}}">${{r.Municipality}}</option>`).join('');
+el('municipality-select').addEventListener('change', renderExplorer);
+renderSourceFilters();
+el('source-municipality-filter').addEventListener('change', renderSources);
+el('source-category-filter').addEventListener('change', renderSources);
+function showView(view, updateHash=true) {{
+  const target = el(view) ? view : 'overview';
+  document.querySelectorAll('.section-nav button[data-view]').forEach(item => item.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+  const button = document.querySelector(`.section-nav button[data-view="${{target}}"]`);
+  if (button) button.classList.add('active');
+  el(target).classList.add('active');
+  if (updateHash) history.replaceState(null, '', `#${{target}}`);
+}}
+document.querySelectorAll('.section-nav button[data-view]').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
+window.addEventListener('hashchange', () => showView(location.hash.replace('#', ''), false));
+showView(location.hash.replace('#', '') || 'overview', false);
+el('nav-toggle').addEventListener('click', () => {{
+  const collapsed = document.body.classList.toggle('nav-collapsed');
+  el('nav-toggle').setAttribute('aria-expanded', String(!collapsed));
+  el('nav-toggle').setAttribute('aria-label', collapsed ? 'Expand navigation' : 'Collapse navigation');
+  el('nav-toggle').innerHTML = collapsed ? '<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span><span class="nav-label">Expand menu</span>' : '<span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></span><span class="nav-label">Collapse menu</span>';
+}});
+const dashboardTooltip = document.createElement('div');
+dashboardTooltip.className = 'dashboard-tooltip';
+document.body.appendChild(dashboardTooltip);
+let tooltipTarget = null;
+function tooltipHtml(target) {{
+  const title = target.dataset.tooltipTitle || '';
+  const subtitle = target.dataset.tooltipSubtitle || '';
+  const value = target.dataset.tooltipValue || '';
+  const escapedValue = escapeHtml(value);
+  const valueHtml = /^\\d/.test(value) && value.includes(' ') ? `<strong>${{escapedValue.split(' ')[0]}}</strong> ${{escapedValue.split(' ').slice(1).join(' ')}}` : escapedValue;
+  return `<div class="tooltip-title">${{escapeHtml(title)}}</div>${{subtitle ? `<div class="tooltip-subtitle">${{escapeHtml(subtitle)}}</div>` : ''}}${{value ? `<div class="tooltip-value">${{valueHtml}}</div>` : ''}}`;
+}}
+function moveTooltip(event) {{
+  const pad = 14;
+  const rect = dashboardTooltip.getBoundingClientRect();
+  let x = event.clientX + 14;
+  let y = event.clientY + 14;
+  if (x + rect.width + pad > window.innerWidth) x = event.clientX - rect.width - 14;
+  if (y + rect.height + pad > window.innerHeight) y = event.clientY - rect.height - 14;
+  dashboardTooltip.style.left = `${{Math.max(pad, x)}}px`;
+  dashboardTooltip.style.top = `${{Math.max(pad, y)}}px`;
+}}
+function moveTooltipToElement(target) {{
+  const pad = 14;
+  const targetRect = target.getBoundingClientRect();
+  const tipRect = dashboardTooltip.getBoundingClientRect();
+  let x = targetRect.left + targetRect.width + 12;
+  let y = targetRect.top + targetRect.height / 2 - tipRect.height / 2;
+  if (x + tipRect.width + pad > window.innerWidth) x = targetRect.left - tipRect.width - 12;
+  if (y + tipRect.height + pad > window.innerHeight) y = window.innerHeight - tipRect.height - pad;
+  dashboardTooltip.style.left = `${{Math.max(pad, x)}}px`;
+  dashboardTooltip.style.top = `${{Math.max(pad, y)}}px`;
+}}
+function showTooltip(target, event=null) {{
+  if (!target) return;
+  tooltipTarget = target;
+  dashboardTooltip.innerHTML = tooltipHtml(target);
+  dashboardTooltip.classList.add('visible');
+  if (event) moveTooltip(event);
+  else moveTooltipToElement(target);
+}}
+function hideTooltip() {{
+  tooltipTarget = null;
+  dashboardTooltip.classList.remove('visible');
+}}
+document.addEventListener('mouseover', event => {{
+  const target = event.target.closest('[data-tooltip-title]');
+  if (!target) return;
+  showTooltip(target, event);
+}});
+document.addEventListener('mousemove', event => {{
+  if (tooltipTarget) moveTooltip(event);
+}});
+document.addEventListener('mouseout', event => {{
+  if (!tooltipTarget) return;
+  const next = event.relatedTarget;
+  if (next && tooltipTarget.contains(next)) return;
+  hideTooltip();
+}});
+document.addEventListener('focusin', event => {{
+  const target = event.target.closest('[data-tooltip-title]');
+  if (!target) return;
+  showTooltip(target);
+}});
+document.addEventListener('focusout', event => {{
+  if (!tooltipTarget) return;
+  const next = event.relatedTarget;
+  if (next && tooltipTarget.contains(next)) return;
+  hideTooltip();
+}});
+renderOverview();
+renderExplorer();
+renderSources();
+</script>
+</body>
+</html>
+"""
+(OUT / "looker_studio_dashboard_prototype.html").write_text(html, encoding="utf-8")
+print(json.dumps({"municipalities": len(records), "fields": len(headers), "nysPointFields": nys_point_fields, "outputs": sorted(p.name for p in OUT.iterdir())}, indent=2))

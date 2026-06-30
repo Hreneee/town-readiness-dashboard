@@ -1,0 +1,685 @@
+/*
+NationBuilder-safe dashboard CSS.
+All dashboard styles are scoped to #town-readiness-dashboard-section so the normal reLI layout stays visible.
+*/
+#town-readiness-dashboard-section {
+      --font-family-base: Arial, Helvetica, sans-serif;
+      --font-size-xs: 12px;
+      --font-size-sm: 13px;
+      --font-size-md: 15px;
+      --font-size-lg: 18px;
+      --font-size-xl: 24px;
+      --font-size-2xl: 30px;
+      --font-weight-regular: 400;
+      --font-weight-medium: 600;
+      --font-weight-bold: 700;
+      --font-weight-heavy: 800;
+      --color-ink: #1f2f2f;
+      --color-muted: #5f6f6b;
+      --color-surface: #ffffff;
+      --color-page: #f4f7f4;
+      --color-line: #cad6d1;
+      --color-primary: #1f6fa9;
+      --color-accent: #6d7f8f;
+      --color-soft: #eef4f8;
+      --status-success-bg: #e7f3ea;
+      --status-success-text: #225b33;
+      --status-warning-bg: #f6efd8;
+      --status-warning-text: #6b541b;
+      --status-neutral-bg: #eef1f0;
+      --status-neutral-text: #475653;
+      --status-info-bg: #e8f1f5;
+      --status-info-text: #24536b;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --radius-none: 0;
+      --radius-sm: 2px;
+      --radius-md: 4px;
+      --shadow-card: 0 1px 2px rgba(31, 47, 47, 0.08);
+      --shadow-raised: 0 8px 20px rgba(31, 47, 47, 0.08);
+      --card-bg: var(--color-surface);
+      --card-border: 1px solid var(--color-line);
+      --card-radius: var(--radius-none);
+      --card-padding: var(--space-4);
+      --card-shadow: var(--shadow-card);
+      --section-gap: var(--space-5);
+      --section-gap-lg: var(--space-6);
+    }
+    #town-readiness-dashboard-section * { box-sizing:border-box; }
+    #town-readiness-dashboard-section { margin:0; background:var(--color-page); color:var(--color-ink); font-family:var(--font-family-base); font-size:var(--font-size-md); line-height:1.5; }
+    #town-readiness-dashboard-section header { background:var(--color-surface); border-bottom:4px solid var(--color-primary); box-shadow:var(--shadow-card); padding:var(--space-5) var(--space-6); }
+    #town-readiness-dashboard-section .brand-row { display:flex; gap:var(--space-4); align-items:center; justify-content:space-between; max-width:1320px; margin:0 auto; }
+    #town-readiness-dashboard-section .brand-lockup { display:flex; gap:var(--space-4); align-items:center; min-width:0; }
+    #town-readiness-dashboard-section .org-name { margin:0 0 var(--space-1); color:var(--color-primary); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); text-transform:uppercase; letter-spacing:.04em; }
+    #town-readiness-dashboard-section h1 { margin:0 0 var(--space-3); font-size:var(--font-size-2xl); font-weight:var(--font-weight-heavy); letter-spacing:0; line-height:1.15; }
+    #town-readiness-dashboard-section h2 { margin:0 0 var(--space-4); font-size:var(--font-size-xl); font-weight:var(--font-weight-heavy); line-height:1.2; }
+    #town-readiness-dashboard-section h3 { margin:0 0 var(--space-3); font-size:var(--font-size-lg); font-weight:var(--font-weight-bold); line-height:1.25; }
+    #town-readiness-dashboard-section p { margin:0 0 var(--space-3); color:var(--color-muted); }
+    #town-readiness-dashboard-section label { display:block; margin-bottom:var(--space-2); color:var(--color-ink); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section a { color:var(--color-primary); }
+    #town-readiness-dashboard-section .section-nav { align-self:start; position:sticky; top:var(--space-4); display:grid; gap:var(--space-2); background:var(--color-surface); border:1px solid var(--color-line); box-shadow:var(--shadow-card); padding:var(--space-3); }
+    #town-readiness-dashboard-section .section-nav a { border-left:3px solid transparent; color:var(--color-ink); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); padding:var(--space-2); text-decoration:none; }
+    #town-readiness-dashboard-section .section-nav a:hover, #town-readiness-dashboard-section .section-nav a:focus-visible { border-left-color:var(--color-primary); background:var(--color-soft); outline:none; }
+    #town-readiness-dashboard-section select, #town-readiness-dashboard-section .toggle button { border:1px solid var(--color-line); background:var(--color-surface); color:var(--color-ink); padding:10px 13px; border-radius:var(--radius-sm); font-family:var(--font-family-base); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); cursor:pointer; transition:background-color .15s ease, border-color .15s ease, color .15s ease; }
+    #town-readiness-dashboard-section select:hover, #town-readiness-dashboard-section .toggle button:hover { border-color:var(--color-primary); }
+    #town-readiness-dashboard-section select:focus-visible, #town-readiness-dashboard-section .toggle button:focus-visible, #town-readiness-dashboard-section summary:focus-visible, #town-readiness-dashboard-section a:focus-visible { outline:3px solid var(--color-accent); outline-offset:2px; }
+    #town-readiness-dashboard-section .toggle button.active { background:var(--color-primary); border-color:var(--color-primary); color:var(--color-surface); }
+    #town-readiness-dashboard-section select { min-width:280px; max-width:100%; }
+    #town-readiness-dashboard-section .municipality-selector-bar { align-items:end; background:rgba(250,251,252,.94); border:1px solid rgba(8,73,167,.08); border-radius:var(--card-radius); box-shadow:0 10px 24px rgba(16,24,40,.08); display:flex; flex-wrap:wrap; gap:var(--space-3); margin:var(--space-4) 0; padding:var(--space-3); }
+    #town-readiness-dashboard-section .municipality-selector-bar label { margin:0; }
+    #town-readiness-dashboard-section .municipality-selector-bar select { background:var(--color-surface); min-width:300px; }
+    #town-readiness-dashboard-section .explorer-scroll { max-height:calc(100vh - 190px); overflow-y:auto; padding:0 var(--space-2) 72px 0; scrollbar-gutter:stable; }
+    #town-readiness-dashboard-section .town-readiness-dashboard-main { max-width:1320px; margin:0 auto; padding:var(--space-5); }
+    #town-readiness-dashboard-section .dashboard-shell { display:grid; grid-template-columns:220px minmax(0,1fr); gap:var(--space-5); align-items:start; }
+    #town-readiness-dashboard-section .dashboard-content { min-width:0; }
+    #town-readiness-dashboard-section .page { display:block; scroll-margin-top:var(--space-5); margin-bottom:var(--section-gap-lg); }
+    #town-readiness-dashboard-section .section-intro { color:var(--color-muted); font-size:var(--font-size-md); max-width:900px; }
+    #town-readiness-dashboard-section .explorer-intro { max-width:none; width:100%; }
+    #town-readiness-dashboard-section .overview-intro { max-width:none; width:100%; }
+    #town-readiness-dashboard-section .overview-lead { display:grid; gap:0; margin-bottom:24px; }
+    #town-readiness-dashboard-section .overview-lead #overview-kpis { margin-bottom:0; }
+    #town-readiness-dashboard-section .overview-subheading { color:var(--color-ink); font-size:var(--font-size-lg); font-weight:var(--font-weight-bold); margin:var(--space-5) 0 var(--space-3); }
+    #town-readiness-dashboard-section .overview-subheading .accent-number { color:var(--color-primary); }
+    #town-readiness-dashboard-section .dashboard-purpose { margin-bottom:var(--space-5); }
+    #town-readiness-dashboard-section .dashboard-purpose h1 { color:var(--color-ink); font-size:28px; margin:0 0 var(--space-3); }
+    #town-readiness-dashboard-section .dashboard-purpose p, #town-readiness-dashboard-section .why-indicators p, #town-readiness-dashboard-section .methodology-intro { max-width:none; width:100%; }
+    #town-readiness-dashboard-section .why-indicators { margin-bottom:var(--space-5); }
+    #town-readiness-dashboard-section .why-indicators h3 { margin-bottom:var(--space-2); }
+    #town-readiness-dashboard-section .panel, #town-readiness-dashboard-section .metric, #town-readiness-dashboard-section .notice { background:var(--card-bg); border:var(--card-border); border-radius:var(--card-radius); box-shadow:var(--card-shadow); padding:var(--card-padding); }
+    #town-readiness-dashboard-section .panel { margin-bottom:0; min-width:0; }
+    #town-readiness-dashboard-section .notice { border-left:6px solid var(--color-primary); margin-bottom:var(--space-4); }
+    #town-readiness-dashboard-section .disclaimer { border-left-color:var(--color-accent); }
+    #town-readiness-dashboard-section .grid { display:grid; gap:var(--space-4); }
+    #town-readiness-dashboard-section .grid > * { min-width:0; }
+    #town-readiness-dashboard-section .kpis { grid-template-columns:repeat(5,minmax(130px,1fr)); gap:var(--space-3); margin:var(--space-4) 0 var(--section-gap); }
+    #town-readiness-dashboard-section .kpis .metric { display:flex; flex-direction:column; justify-content:center; min-height:112px; padding:var(--space-3); text-align:center; }
+    #town-readiness-dashboard-section .kpis .metric-title { order:2; margin-top:var(--space-2); }
+    #town-readiness-dashboard-section .kpis .metric-value { order:1; }
+    #town-readiness-dashboard-section .kpis .metric-note { order:3; margin-top:var(--space-1); }
+    #town-readiness-dashboard-section .kpis .metric-title { align-items:center; display:flex; justify-content:center; }
+    #town-readiness-dashboard-section .kpis .metric-value { text-align:center; }
+    #town-readiness-dashboard-section .selected-kpis { gap:var(--space-2); grid-template-columns:repeat(3,minmax(110px,1fr)); grid-auto-rows:1fr; height:390px; margin-bottom:0; }
+    #town-readiness-dashboard-section .selected-kpis .metric { align-content:start; display:grid; grid-template-rows:42px 36px 1fr; min-height:0; overflow:hidden; padding:6px; text-align:center; }
+    #town-readiness-dashboard-section .selected-kpis .metric-title { align-items:center; display:flex; font-size:10px; justify-content:center; line-height:1.18; min-height:0; }
+    #town-readiness-dashboard-section .selected-kpis .metric-value { align-items:center; display:flex; font-size:20px; justify-content:center; line-height:1; margin:0; }
+    #town-readiness-dashboard-section .selected-kpis .metric-meta { font-size:10px; line-height:1.08; margin-top:2px; text-align:center; }
+    #town-readiness-dashboard-section .selected-kpis .comparison-delta, #town-readiness-dashboard-section .selected-kpis .comparison-rank { font-size:10px; line-height:1.08; }
+    #town-readiness-dashboard-section .two { grid-template-columns:1fr 1fr; }
+    #town-readiness-dashboard-section .wide-narrow { grid-template-columns:1.35fr .65fr; }
+    #town-readiness-dashboard-section .overview-charts { grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr); align-items:stretch; }
+    #town-readiness-dashboard-section .overview-charts .panel { display:flex; flex-direction:column; height:380px; min-height:0; }
+    #town-readiness-dashboard-section .overview-charts .compact-chart { columns:1; }
+    #town-readiness-dashboard-section .overview-charts #rank-chart { column-count:auto; column-width:auto; columns:auto; flex:1; min-height:0; overflow-x:hidden; overflow-y:auto; padding-right:var(--space-2); scrollbar-gutter:stable; }
+    #town-readiness-dashboard-section .overview-charts #rank-chart .bar-row { grid-template-columns:minmax(130px,210px) minmax(80px,1fr) 64px; }
+    #town-readiness-dashboard-section .overview-charts #rank-chart .bar-row { break-inside:auto; }
+    #town-readiness-dashboard-section .overview-charts #rank-chart .bar-label { overflow-wrap:anywhere; }
+    #town-readiness-dashboard-section .metric-title { color:var(--color-muted); font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); min-height:36px; }
+    #town-readiness-dashboard-section .metric-value { color:var(--color-primary); font-size:var(--font-size-2xl); font-weight:var(--font-weight-heavy); line-height:1.1; margin:var(--space-2) 0; overflow-wrap:anywhere; }
+    #town-readiness-dashboard-section .metric-note { color:var(--color-muted); font-size:var(--font-size-xs); margin:0; }
+    #town-readiness-dashboard-section .metric-meta { display:grid; gap:var(--space-1); }
+    #town-readiness-dashboard-section .comparison-delta { display:block; font-size:var(--font-size-xs); font-weight:var(--font-weight-heavy); }
+    #town-readiness-dashboard-section .comparison-delta.above { color:#1f7a43; }
+    #town-readiness-dashboard-section .comparison-delta.below { color:#b42318; }
+    #town-readiness-dashboard-section .comparison-delta.neutral { color:var(--color-muted); }
+    #town-readiness-dashboard-section .comparison-rank { display:block; color:var(--color-muted); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section .bar-row { display:grid; grid-template-columns:minmax(160px,240px) 1fr 72px; gap:var(--space-3); align-items:center; margin:var(--space-2) 0; }
+    #town-readiness-dashboard-section .bar-label { font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section .bar-track { background:var(--color-soft); height:16px; border:1px solid var(--color-line); border-radius:var(--radius-sm); overflow:hidden; }
+    #town-readiness-dashboard-section .bar-fill { background:var(--color-primary); height:100%; min-width:2px; }
+    #town-readiness-dashboard-section .bar-value { text-align:right; font-weight:var(--font-weight-bold); font-variant-numeric:tabular-nums; }
+    #town-readiness-dashboard-section .compact-chart { columns:2; column-gap:var(--space-5); }
+    #town-readiness-dashboard-section .compact-chart .bar-row { break-inside:avoid; grid-template-columns:minmax(132px,190px) 1fr 64px; }
+    #town-readiness-dashboard-section .hist { display:flex; align-items:flex-end; gap:var(--space-2); height:220px; border-left:1px solid var(--color-line); border-bottom:1px solid var(--color-line); padding:var(--space-2); }
+    #town-readiness-dashboard-section .hist-bin { flex:1; min-width:54px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:var(--space-2); height:100%; }
+    #town-readiness-dashboard-section .hist-bar { width:100%; background:var(--color-primary); min-height:2px; border-radius:var(--radius-sm) var(--radius-sm) 0 0; }
+    #town-readiness-dashboard-section .hist-count { color:var(--color-primary); font-weight:var(--font-weight-heavy); }
+    #town-readiness-dashboard-section .hist-label { color:var(--color-muted); font-size:var(--font-size-xs); min-height:34px; text-align:center; }
+    #town-readiness-dashboard-section .profile-head { display:grid; grid-template-columns:minmax(320px,.95fr) minmax(420px,1.05fr); gap:var(--space-5); align-items:stretch; margin:var(--space-4) 0; }
+    #town-readiness-dashboard-section .map-placeholder { min-height:230px; background:repeating-linear-gradient(45deg, var(--color-soft), var(--color-soft) 10px, var(--color-page) 10px, var(--color-page) 20px); border:1px solid var(--color-line); box-shadow:var(--shadow-card); display:flex; align-items:center; justify-content:center; text-align:center; padding:var(--space-4); color:var(--color-muted); font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section .map-panel { min-height:390px; background:var(--color-soft); border:1px solid var(--color-line); box-shadow:var(--shadow-card); overflow:hidden; position:relative; }
+    #town-readiness-dashboard-section .map-panel iframe { width:100%; height:390px; border:0; display:block; background:var(--color-soft); }
+    #town-readiness-dashboard-section .map-fallback { margin:0; padding:var(--space-3); color:var(--color-muted); font-size:var(--font-size-xs); background:var(--color-surface); border-top:1px solid var(--color-line); }
+    #town-readiness-dashboard-section .donut-wrap { display:grid; grid-template-columns:220px 1fr; gap:var(--space-4); align-items:center; }
+    #town-readiness-dashboard-section .nys-detail-layout { align-items:start; display:grid; gap:20px; grid-template-columns:minmax(320px,.8fr) minmax(420px,1.2fr); margin-top:18px; }
+    #town-readiness-dashboard-section .nys-detail-layout .donut-wrap { grid-template-columns:220px minmax(180px,1fr); margin:0; }
+    #town-readiness-dashboard-section .nys-detail-layout .nys-table-wrap { margin-top:0; max-height:240px; }
+    #town-readiness-dashboard-section .donut { width:210px; height:210px; border-radius:50%; border:1px solid var(--color-line); background:conic-gradient(var(--color-primary) 0deg, var(--color-primary) 1deg, var(--color-soft) 1deg); position:relative; box-shadow:var(--shadow-card); }
+    #town-readiness-dashboard-section .donut::after { content:""; position:absolute; inset:54px; background:var(--color-surface); border:1px solid var(--color-line); border-radius:50%; }
+    #town-readiness-dashboard-section .donut-label { background:rgba(255,255,255,.94); border:1px solid rgba(26,38,64,.18); border-radius:999px; color:#1A2640; font-size:11px; font-weight:var(--font-weight-heavy); left:50%; line-height:1; min-width:32px; padding:4px 6px; pointer-events:none; position:absolute; text-align:center; text-shadow:none; top:50%; transform:translate(-50%, -50%); z-index:1; }
+    #town-readiness-dashboard-section .legend { display:grid; gap:var(--space-2); max-height:260px; overflow:auto; }
+    #town-readiness-dashboard-section .legend-item { display:grid; grid-template-columns:14px 1fr auto; gap:var(--space-2); align-items:center; font-size:var(--font-size-sm); }
+    #town-readiness-dashboard-section .swatch { width:14px; height:14px; border:1px solid var(--color-surface); border-radius:var(--radius-sm); }
+    #town-readiness-dashboard-section table { width:100%; border-collapse:collapse; font-size:var(--font-size-sm); }
+    #town-readiness-dashboard-section th, #town-readiness-dashboard-section td { text-align:left; vertical-align:top; padding:10px var(--space-3); border-bottom:1px solid var(--color-line); }
+    #town-readiness-dashboard-section th { background:var(--color-soft); color:var(--color-ink); font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section tbody tr:nth-child(even) { background:var(--color-page); }
+    #town-readiness-dashboard-section .scroll { overflow:auto; max-height:520px; border:1px solid var(--color-line); }
+    #town-readiness-dashboard-section .category { margin-top:var(--space-6); }
+    #town-readiness-dashboard-section .category h3 { border-top:1px solid var(--color-line); padding-top:var(--space-5); }
+    #town-readiness-dashboard-section .category .content { background:transparent; padding:0; }
+    #town-readiness-dashboard-section .category-blurb { margin:0; }
+    #town-readiness-dashboard-section .education-institutions { align-items:start; display:grid; gap:var(--space-4); grid-template-columns:minmax(160px,220px) minmax(240px,1fr); }
+    #town-readiness-dashboard-section .institution-list { background:var(--color-surface); border:1px solid var(--color-line); padding:var(--space-3); }
+    #town-readiness-dashboard-section .institution-list h5 { color:var(--color-ink); font-size:var(--font-size-sm); font-weight:var(--font-weight-heavy); margin:0 0 var(--space-2); }
+    #town-readiness-dashboard-section .institution-links { display:grid; gap:var(--space-2); list-style:none; margin:0; padding:0; }
+    #town-readiness-dashboard-section .institution-links a { font-weight:var(--font-weight-bold); overflow-wrap:anywhere; }
+    #town-readiness-dashboard-section .resource-empty { color:var(--color-muted); margin:0; max-width:760px; }
+    #town-readiness-dashboard-section .method-section { margin-bottom:var(--section-gap); }
+    #town-readiness-dashboard-section .sources-controls { align-items:end; display:flex; flex-wrap:wrap; gap:var(--space-3); margin:var(--space-4) 0; }
+    #town-readiness-dashboard-section .sources-controls .filter-field { min-width:240px; }
+    #town-readiness-dashboard-section .sources-controls select { min-width:240px; width:100%; }
+    #town-readiness-dashboard-section .sources-summary { color:var(--color-muted); font-size:var(--font-size-sm); margin:0 0 var(--space-3); }
+    #town-readiness-dashboard-section .sources-table-wrap { max-height:620px; }
+    #town-readiness-dashboard-section .sources-table { table-layout:fixed; }
+    #town-readiness-dashboard-section .sources-table th:nth-child(1), #town-readiness-dashboard-section .sources-table td:nth-child(1) { width:22%; }
+    #town-readiness-dashboard-section .sources-table th:nth-child(2), #town-readiness-dashboard-section .sources-table td:nth-child(2) { width:24%; }
+    #town-readiness-dashboard-section .sources-table th:nth-child(3), #town-readiness-dashboard-section .sources-table td:nth-child(3) { width:54%; }
+    #town-readiness-dashboard-section .sources-table a { color:var(--color-primary); font-weight:var(--font-weight-bold); overflow-wrap:anywhere; }
+    #town-readiness-dashboard-section .source-entry-note { color:var(--color-muted); display:block; font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); margin-top:2px; }
+    #town-readiness-dashboard-section .sources-empty { color:var(--color-muted); font-size:var(--font-size-md); margin:var(--space-4) 0 0; }
+    #town-readiness-dashboard-section .section-block { margin-top:var(--section-gap); }
+    #town-readiness-dashboard-section .benchmark-chart { margin-top:var(--space-3); }
+    #town-readiness-dashboard-section .nys-table-wrap { margin-top:var(--space-4); max-height:310px; }
+    #town-readiness-dashboard-section .status-pill { display:inline-block; border-radius:999px; padding:var(--space-1) var(--space-2); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section .status-pill.success { background:var(--status-success-bg); color:var(--status-success-text); }
+    #town-readiness-dashboard-section .status-pill.warning { background:var(--status-warning-bg); color:var(--status-warning-text); }
+    #town-readiness-dashboard-section .status-pill.neutral { background:var(--status-neutral-bg); color:var(--status-neutral-text); }
+    #town-readiness-dashboard-section .status-pill.info { background:var(--status-info-bg); color:var(--status-info-text); }
+    @media (max-width: 1000px) {
+      #town-readiness-dashboard-section header { position:static; }
+      #town-readiness-dashboard-section .town-readiness-dashboard-main { padding:var(--space-4); }
+      #town-readiness-dashboard-section .brand-row, #town-readiness-dashboard-section .brand-lockup, #town-readiness-dashboard-section .dashboard-shell { display:block; }
+      #town-readiness-dashboard-section .section-nav { position:static; margin-bottom:var(--space-4); }
+      #town-readiness-dashboard-section .kpis { grid-template-columns:repeat(5,minmax(110px,1fr)); }
+      #town-readiness-dashboard-section .selected-kpis, #town-readiness-dashboard-section .two, #town-readiness-dashboard-section .wide-narrow, #town-readiness-dashboard-section .overview-charts, #town-readiness-dashboard-section .profile-head, #town-readiness-dashboard-section .donut-wrap { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .compact-chart { columns:1; }
+      #town-readiness-dashboard-section .hist { gap:var(--space-1); }
+      #town-readiness-dashboard-section .hist-bin { min-width:0; }
+      #town-readiness-dashboard-section .bar-row { grid-template-columns:1fr; gap:var(--space-1); }
+      #town-readiness-dashboard-section .bar-value { text-align:left; }
+      #town-readiness-dashboard-section h1 { font-size:var(--font-size-xl); }
+    }
+    #town-readiness-dashboard-section {
+      --color-primary:#0849A7;
+      --color-primary-dark:#05346f;
+      --color-primary-soft:#eaf3ff;
+      --color-primary-line:#c8dcf4;
+      --color-ink:#000000;
+      --color-muted:#475467;
+      --color-page:#FAFBFC;
+      --color-line:#e6edf4;
+      --color-soft:#f3f7fb;
+      --card-radius:14px;
+      --card-border:1px solid rgba(8,73,167,.08);
+      --card-shadow:0 8px 24px rgba(16, 24, 40, .06);
+      --shadow-card:0 8px 24px rgba(16, 24, 40, .06);
+      --shadow-raised:0 16px 40px rgba(16, 24, 40, .10);
+    }
+    #town-readiness-dashboard-section { color:var(--color-ink); background:var(--color-page); line-height:1.58; overflow:hidden; }
+    #town-readiness-dashboard-section header { display:none; }
+    #town-readiness-dashboard-section .town-readiness-dashboard-main { max-width:none; margin:0 0 0 280px; padding:0; height:100vh; overflow:hidden; }
+    body.nav-collapsed #town-readiness-dashboard-section .town-readiness-dashboard-main { margin-left:64px; }
+    #town-readiness-dashboard-section .dashboard-shell { display:block; height:100%; }
+    #town-readiness-dashboard-section .dashboard-content { height:100vh; overflow:auto; padding:var(--space-6); }
+    #town-readiness-dashboard-section .section-nav { position:fixed; top:0; left:0; width:280px; height:100vh; align-content:start; background:#ffffff; border:0; border-right:1px solid var(--color-line); box-shadow:6px 0 24px rgba(16,24,40,.04); padding:var(--space-5) var(--space-4); z-index:10; }
+    body.nav-collapsed #town-readiness-dashboard-section .section-nav { width:64px; padding:var(--space-4) var(--space-2); }
+    body.nav-collapsed #town-readiness-dashboard-section .nav-label { display:none; }
+    #town-readiness-dashboard-section .nav-icon { align-items:center; display:inline-flex; flex:0 0 24px; height:24px; justify-content:center; line-height:1; width:24px; }
+    #town-readiness-dashboard-section .nav-icon svg { display:block; height:20px; stroke-width:2.2; width:20px; }
+    #town-readiness-dashboard-section .section-nav button { align-items:center; display:flex; gap:var(--space-2); }
+    body.nav-collapsed #town-readiness-dashboard-section .section-nav button { border-left-width:0; justify-content:center; padding:var(--space-3) var(--space-2); }
+    #town-readiness-dashboard-section .nav-toggle { margin-top:auto; }
+    #town-readiness-dashboard-section .nav-toggle .nav-icon { color:var(--color-primary); }
+    #town-readiness-dashboard-section .section-nav button { background:transparent; border:0; border-left:4px solid transparent; border-radius:12px; color:var(--color-muted); cursor:pointer; font-family:var(--font-family-base); font-size:var(--font-size-md); font-weight:var(--font-weight-bold); padding:var(--space-3); text-align:left; }
+    #town-readiness-dashboard-section .section-nav button.active, #town-readiness-dashboard-section .section-nav button:hover, #town-readiness-dashboard-section .section-nav button:focus-visible { background:var(--color-primary-soft); border-left-color:var(--color-primary); color:var(--color-primary-dark); outline:none; }
+    #town-readiness-dashboard-section .page { display:none; margin-bottom:0; }
+    #town-readiness-dashboard-section .page.active { display:block; }
+    #town-readiness-dashboard-section h2 { color:#101828; letter-spacing:0; margin-bottom:var(--space-5); }
+    #town-readiness-dashboard-section h3 { color:#101828; letter-spacing:0; margin-bottom:var(--space-4); }
+    #town-readiness-dashboard-section p { color:var(--color-muted); }
+    #town-readiness-dashboard-section .section-intro { color:var(--color-muted); line-height:1.65; }
+    #town-readiness-dashboard-section .panel, #town-readiness-dashboard-section .metric, #town-readiness-dashboard-section .notice, #town-readiness-dashboard-section .map-panel, #town-readiness-dashboard-section .category-metric, #town-readiness-dashboard-section .progress-card, #town-readiness-dashboard-section .detail-box { border-color:rgba(8,73,167,.08); border-radius:var(--card-radius); box-shadow:var(--card-shadow); }
+    #town-readiness-dashboard-section .panel { padding:var(--space-5); }
+    #town-readiness-dashboard-section .metric { background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%); }
+    #town-readiness-dashboard-section .metric-value, #town-readiness-dashboard-section .category-metric-value, #town-readiness-dashboard-section .progress-value, #town-readiness-dashboard-section .hist-count { color:var(--color-primary); }
+    #town-readiness-dashboard-section .metric-title, #town-readiness-dashboard-section .category-metric-title { color:#344054; }
+    #town-readiness-dashboard-section .metric-note, #town-readiness-dashboard-section .metric-meta, #town-readiness-dashboard-section .comparison-rank { color:var(--color-muted); }
+    #town-readiness-dashboard-section .bar-track, #town-readiness-dashboard-section .progress-track { background:#f0f5fb; border-color:#dce8f5; }
+    #town-readiness-dashboard-section .bar-fill, #town-readiness-dashboard-section .progress-fill, #town-readiness-dashboard-section .hist-bar { background:linear-gradient(90deg,var(--color-primary) 0%,#1d64c8 100%); }
+    #town-readiness-dashboard-section .status-badge, #town-readiness-dashboard-section .chip-badge { border-radius:999px; }
+    #town-readiness-dashboard-section .status-badge.yes { background:var(--color-primary-soft); border-color:var(--color-primary-line); color:var(--color-primary-dark); }
+    #town-readiness-dashboard-section .status-badge.no { background:#f7f8fa; border-color:#e7eaee; color:#5f6b7a; }
+    #town-readiness-dashboard-section .category h3 { border-top-color:#e8eef5; margin-top:var(--space-6); }
+    #town-readiness-dashboard-section .scroll { border-color:rgba(8,73,167,.10); border-radius:12px; }
+    #town-readiness-dashboard-section select { border-color:#d8e4f2; border-radius:12px; box-shadow:0 1px 2px rgba(16,24,40,.04); }
+    #town-readiness-dashboard-section .kpis { grid-template-columns:repeat(5,minmax(130px,1fr)); }
+    #town-readiness-dashboard-section .metric-note:empty { display:none; }
+    #town-readiness-dashboard-section .metric-title { min-height:auto; color:var(--color-ink); }
+    #town-readiness-dashboard-section .metric-meta { color:var(--color-muted); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); line-height:1.35; margin-top:var(--space-2); }
+    #town-readiness-dashboard-section .wide-narrow { grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr); }
+    #town-readiness-dashboard-section .overview-charts { grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr); align-items:stretch; }
+    #town-readiness-dashboard-section .overview-charts .panel { display:flex; flex-direction:column; height:380px; min-height:0; }
+    #town-readiness-dashboard-section .overview-charts .compact-chart { columns:1; }
+    #town-readiness-dashboard-section .overview-charts #rank-chart { column-count:auto; column-width:auto; columns:auto; flex:1; min-height:0; overflow-x:hidden; overflow-y:auto; padding-right:var(--space-2); scrollbar-gutter:stable; }
+    #town-readiness-dashboard-section .overview-charts #rank-chart .bar-row { grid-template-columns:minmax(130px,210px) minmax(80px,1fr) 64px; }
+    #town-readiness-dashboard-section .overview-charts #rank-chart .bar-row { break-inside:auto; }
+    #town-readiness-dashboard-section .overview-charts #rank-chart .bar-label { overflow-wrap:anywhere; }
+    #town-readiness-dashboard-section .compact-chart { columns:1; }
+    #town-readiness-dashboard-section .bar-row { grid-template-columns:minmax(120px,210px) minmax(90px,1fr) 70px; }
+    #town-readiness-dashboard-section .hist { width:100%; min-width:0; }
+    #town-readiness-dashboard-section .hist-bin { min-width:0; }
+    #town-readiness-dashboard-section .map-fallback { display:none; }
+    #town-readiness-dashboard-section .profile-head { grid-template-columns:minmax(320px,.95fr) minmax(420px,1.05fr); gap:var(--space-5); align-items:stretch; }
+    #town-readiness-dashboard-section .explorer-analysis { grid-template-columns:1fr; }
+    #town-readiness-dashboard-section .benchmark-panel { display:none; }
+    #town-readiness-dashboard-section .edu-pies { display:grid; gap:var(--space-4); grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); padding:var(--space-4); }
+    #town-readiness-dashboard-section .mini-pie-card { border:1px solid var(--color-line); padding:var(--space-3); }
+    #town-readiness-dashboard-section .mini-pie { width:92px; height:92px; border-radius:50%; background:conic-gradient(var(--color-primary) 0deg, var(--color-primary) 1deg, var(--color-soft) 1deg); margin-bottom:var(--space-2); }
+    #town-readiness-dashboard-section .mini-pie-label { font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section .mini-pie-value { color:var(--color-muted); font-size:var(--font-size-xs); }
+    #town-readiness-dashboard-section .category-dashboard { display:grid; gap:var(--space-4); padding:0; }
+    #town-readiness-dashboard-section .category-dashboard h4 { margin:0; color:var(--color-ink); font-size:var(--font-size-md); font-weight:var(--font-weight-heavy); }
+    #town-readiness-dashboard-section .category-blurb { margin-bottom:0; }
+    #town-readiness-dashboard-section .category-metrics { display:grid; gap:var(--space-3); grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
+    #town-readiness-dashboard-section .category-metrics.compact-metrics { grid-template-columns:repeat(auto-fit,minmax(140px,180px)); justify-content:start; }
+    #town-readiness-dashboard-section .category-metric { background:var(--color-surface); border:1px solid var(--color-line); padding:var(--space-3); min-width:0; }
+    #town-readiness-dashboard-section .category-metric-title { font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); color:var(--color-muted); }
+    #town-readiness-dashboard-section .category-metric-value { color:var(--color-primary); font-size:var(--font-size-xl); font-weight:var(--font-weight-heavy); line-height:1.1; margin-top:var(--space-1); overflow-wrap:anywhere; }
+    #town-readiness-dashboard-section .comparison-stat { color:var(--color-muted); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); line-height:1.35; margin-top:var(--space-2); }
+    #town-readiness-dashboard-section .badge-grid { display:grid; gap:var(--space-2); grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
+    #town-readiness-dashboard-section .indicator-card { align-items:center; display:flex; gap:var(--space-2); justify-content:space-between; min-width:0; padding:var(--space-1) 0; }
+    #town-readiness-dashboard-section .indicator-title { font-size:var(--font-size-sm); color:var(--color-ink); font-weight:var(--font-weight-bold); margin:0; }
+    #town-readiness-dashboard-section .status-badge, #town-readiness-dashboard-section .chip-badge { display:inline-flex; align-items:center; gap:var(--space-1); border:1px solid var(--color-line); padding:var(--space-1) var(--space-2); font-size:var(--font-size-xs); font-weight:var(--font-weight-bold); background:var(--color-soft); color:var(--color-ink); white-space:nowrap; }
+    #town-readiness-dashboard-section .status-badge.yes { background:#eef6ff; border-color:#bfd7f2; color:var(--color-primary); }
+    #town-readiness-dashboard-section .status-badge.no { background:#f4f4f4; color:var(--color-muted); }
+    #town-readiness-dashboard-section .checklist { display:grid; gap:var(--space-2); grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
+    #town-readiness-dashboard-section .check-row { display:flex; gap:var(--space-2); align-items:center; justify-content:space-between; padding:var(--space-1) 0; min-width:0; }
+    #town-readiness-dashboard-section .check-label { font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section .progress-grid { display:grid; gap:var(--space-3); grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+    #town-readiness-dashboard-section .progress-card { border:1px solid var(--color-line); padding:var(--space-3); background:var(--color-surface); }
+    #town-readiness-dashboard-section .progress-title { font-size:var(--font-size-sm); font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section .progress-value { color:var(--color-primary); font-size:var(--font-size-lg); font-weight:var(--font-weight-heavy); margin:var(--space-2) 0; }
+    #town-readiness-dashboard-section .progress-track { height:12px; background:var(--color-soft); border:1px solid var(--color-line); overflow:hidden; }
+    #town-readiness-dashboard-section .progress-fill { height:100%; background:var(--color-primary); }
+    #town-readiness-dashboard-section .detail-box { border:1px solid var(--color-line); background:var(--color-surface); }
+    #town-readiness-dashboard-section .detail-box summary { border:0; border-left:0; box-shadow:none; padding:var(--space-3); }
+    #town-readiness-dashboard-section .detail-box .detail-content { padding:0 var(--space-3) var(--space-3); color:var(--color-muted); font-size:var(--font-size-sm); }
+    @media (max-width: 850px) {
+      #town-readiness-dashboard-section { overflow:auto; }
+      #town-readiness-dashboard-section .town-readiness-dashboard-main { margin:0; height:auto; overflow:visible; }
+      body.nav-collapsed #town-readiness-dashboard-section .town-readiness-dashboard-main { margin-left:0; }
+      #town-readiness-dashboard-section .dashboard-content { height:auto; overflow:visible; padding:var(--space-4); }
+      #town-readiness-dashboard-section .section-nav { position:static; width:auto; height:auto; border-right:0; border-bottom:1px solid var(--color-line); }
+      body.nav-collapsed #town-readiness-dashboard-section .section-nav { display:grid; width:auto; padding:var(--space-4); }
+      body.nav-collapsed #town-readiness-dashboard-section .nav-label { display:none; }
+      #town-readiness-dashboard-section .kpis { grid-template-columns:repeat(5,minmax(110px,1fr)); }
+      #town-readiness-dashboard-section .wide-narrow, #town-readiness-dashboard-section .overview-charts, #town-readiness-dashboard-section .profile-head, #town-readiness-dashboard-section .donut-wrap, #town-readiness-dashboard-section .explorer-analysis, #town-readiness-dashboard-section .education-institutions { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .explorer-scroll { max-height:none; overflow:visible; padding-right:0; }
+      #town-readiness-dashboard-section .selected-kpis { height:auto; grid-template-columns:repeat(2,minmax(140px,1fr)); }
+      #town-readiness-dashboard-section .overview-charts .panel { height:auto; min-height:0; }
+      #town-readiness-dashboard-section .overview-charts #rank-chart { max-height:none; overflow:visible; padding-right:0; }
+      #town-readiness-dashboard-section .overview-charts .compact-chart { columns:1; }
+      #town-readiness-dashboard-section .bar-row { grid-template-columns:104px minmax(76px,1fr) 58px; gap:var(--space-2); }
+      #town-readiness-dashboard-section .bar-label, #town-readiness-dashboard-section .bar-value { font-size:var(--font-size-xs); }
+      #town-readiness-dashboard-section .hist-label { font-size:10px; }
+    }
+    @media (max-width: 520px) {
+      #town-readiness-dashboard-section .kpis { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .overview-charts .panel { min-height:0; }
+      #town-readiness-dashboard-section .overview-charts .compact-chart { columns:1; }
+    }
+    /* Reference design skin: colors, typography, spacing, and component styling only. */
+    #town-readiness-dashboard-section {
+      --font-family-base:'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-size-xs:12px;
+      --font-size-sm:13px;
+      --font-size-md:14px;
+      --font-size-lg:16px;
+      --font-size-xl:18px;
+      --font-size-2xl:30px;
+      --font-weight-regular:400;
+      --font-weight-medium:500;
+      --font-weight-bold:600;
+      --font-weight-heavy:600;
+      --color-ink:#1A2640;
+      --color-muted:#5C6B82;
+      --color-surface:#ffffff;
+      --color-page:#F2F5FA;
+      --color-line:#D8DEE9;
+      --color-primary:#074BA9;
+      --color-primary-dark:#053A83;
+      --color-primary-soft:#E8EDF7;
+      --color-primary-line:#B8CFF0;
+      --color-accent:#D0DEFA;
+      --color-soft:#EEF1F7;
+      --status-success-bg:#E7F4ED;
+      --status-success-text:#1A7A4A;
+      --status-warning-bg:#FEF3E2;
+      --status-warning-text:#B45309;
+      --status-neutral-bg:#F1F3F7;
+      --status-neutral-text:#5C6B82;
+      --status-info-bg:#E8F0FB;
+      --status-info-text:#074BA9;
+      --radius-sm:4px;
+      --radius-md:6px;
+      --card-radius:6px;
+      --card-border:1px solid var(--color-line);
+      --card-shadow:none;
+      --shadow-card:none;
+      --shadow-raised:0 8px 24px rgba(26,38,64,.08);
+      --card-padding:20px;
+    }
+    #town-readiness-dashboard-section { font-size:16px; }
+    #town-readiness-dashboard-section { background:var(--color-page); color:var(--color-ink); font-family:var(--font-family-base); font-size:var(--font-size-md); line-height:1.5; }
+    #town-readiness-dashboard-section .town-readiness-dashboard-main { margin-left:264px; }
+    body.nav-collapsed #town-readiness-dashboard-section .town-readiness-dashboard-main { margin-left:64px; }
+    #town-readiness-dashboard-section .dashboard-content { padding:32px 24px; }
+    #town-readiness-dashboard-section .section-nav { background:var(--color-primary); border:0; box-shadow:none; color:#ffffff; padding:0 24px 20px; width:264px; }
+    body.nav-collapsed #town-readiness-dashboard-section .section-nav { width:64px; padding:16px 8px; }
+    #town-readiness-dashboard-section .section-nav button { border:0; border-bottom:2px solid transparent; border-radius:0; color:rgba(255,255,255,.68); font-size:14px; font-weight:var(--font-weight-medium); padding:14px 10px; }
+    #town-readiness-dashboard-section .section-nav button.active, #town-readiness-dashboard-section .section-nav button:hover, #town-readiness-dashboard-section .section-nav button:focus-visible { background:transparent; border-bottom-color:#ffffff; color:#ffffff; }
+    body.nav-collapsed #town-readiness-dashboard-section .section-nav button { border-bottom-color:transparent; border-left:0; border-radius:6px; }
+    body.nav-collapsed #town-readiness-dashboard-section .section-nav button.active, body.nav-collapsed #town-readiness-dashboard-section .section-nav button:hover { background:rgba(255,255,255,.14); }
+    #town-readiness-dashboard-section .nav-icon svg { height:18px; stroke-width:2; width:18px; }
+    #town-readiness-dashboard-section .nav-toggle { border-top:1px solid rgba(255,255,255,.15) !important; margin-top:auto; }
+    #town-readiness-dashboard-section .nav-toggle .nav-icon { color:#ffffff; }
+    #town-readiness-dashboard-section h2 { color:var(--color-ink); font-size:18px; font-weight:var(--font-weight-bold); line-height:1.5; margin:0 0 4px; }
+    #town-readiness-dashboard-section h3 { color:var(--color-ink); font-size:14px; font-weight:var(--font-weight-bold); line-height:1.5; margin:0 0 4px; }
+    #town-readiness-dashboard-section h4 { color:var(--color-ink); font-size:14px; font-weight:var(--font-weight-bold); line-height:1.5; }
+    #town-readiness-dashboard-section p, #town-readiness-dashboard-section .section-intro { color:var(--color-muted); font-size:14px; line-height:1.6; }
+    #town-readiness-dashboard-section .overview-subheading { color:var(--color-ink); font-size:15px; font-weight:var(--font-weight-bold); margin:24px 0 12px; }
+    #town-readiness-dashboard-section .accent-number, #town-readiness-dashboard-section .overview-subheading .accent-number { color:var(--color-primary); }
+    #town-readiness-dashboard-section .panel, #town-readiness-dashboard-section .metric, #town-readiness-dashboard-section .notice, #town-readiness-dashboard-section .map-panel, #town-readiness-dashboard-section .category-metric, #town-readiness-dashboard-section .progress-card, #town-readiness-dashboard-section .detail-box, #town-readiness-dashboard-section .institution-list { background:#ffffff; border:var(--card-border); border-radius:var(--card-radius); box-shadow:none; }
+    #town-readiness-dashboard-section .panel { padding:20px; }
+    #town-readiness-dashboard-section .grid { gap:16px; }
+    #town-readiness-dashboard-section .kpis { gap:16px; margin:16px 0 24px; }
+    #town-readiness-dashboard-section .kpis .metric { background:#ffffff; min-height:116px; padding:20px; }
+    #town-readiness-dashboard-section .metric { background:#ffffff; }
+    #town-readiness-dashboard-section .metric-title, #town-readiness-dashboard-section .category-metric-title { color:var(--color-muted); font-size:12px; font-weight:var(--font-weight-medium); letter-spacing:.04em; text-transform:uppercase; }
+    #town-readiness-dashboard-section .metric-value { color:var(--color-ink); font-size:30px; font-weight:var(--font-weight-bold); letter-spacing:0; line-height:1.1; }
+    #town-readiness-dashboard-section .metric-note, #town-readiness-dashboard-section .metric-meta, #town-readiness-dashboard-section .comparison-rank { color:var(--color-muted); font-size:12px; font-weight:var(--font-weight-regular); }
+    #town-readiness-dashboard-section .selected-kpis .metric { padding:12px; }
+    #town-readiness-dashboard-section .selected-kpis .metric-title { color:var(--color-muted); font-size:11px; font-weight:var(--font-weight-medium); letter-spacing:.02em; text-transform:uppercase; }
+    #town-readiness-dashboard-section .selected-kpis .metric-value { color:var(--color-ink); font-size:24px; font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section .comparison-delta.above { color:#1A7A4A; }
+    #town-readiness-dashboard-section .comparison-delta.below { color:#C0392B; }
+    #town-readiness-dashboard-section .comparison-delta.neutral { color:var(--color-muted); }
+    #town-readiness-dashboard-section select, #town-readiness-dashboard-section .toggle button { background:#ffffff; border:1px solid var(--color-line); border-radius:6px; box-shadow:0 1px 2px rgba(0,0,0,.04); color:var(--color-ink); font-size:14px; font-weight:var(--font-weight-medium); padding:8px 36px 8px 12px; }
+    #town-readiness-dashboard-section select:hover, #town-readiness-dashboard-section .toggle button:hover { border-color:#B8CFF0; }
+    #town-readiness-dashboard-section select:focus-visible, #town-readiness-dashboard-section .toggle button:focus-visible, #town-readiness-dashboard-section summary:focus-visible, #town-readiness-dashboard-section a:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; }
+    #town-readiness-dashboard-section .municipality-selector-bar { background:transparent; border:0; border-radius:0; box-shadow:none; gap:12px; margin:16px 0; padding:0; }
+    #town-readiness-dashboard-section .municipality-selector-bar label { color:var(--color-ink); font-size:14px; font-weight:var(--font-weight-medium); }
+    #town-readiness-dashboard-section .bar-track, #town-readiness-dashboard-section .progress-track { background:var(--color-soft); border:0; border-radius:999px; }
+    #town-readiness-dashboard-section .bar-fill, #town-readiness-dashboard-section .progress-fill, #town-readiness-dashboard-section .hist-bar { background:var(--color-primary); }
+    #town-readiness-dashboard-section .bar-label, #town-readiness-dashboard-section .bar-value { color:var(--color-ink); font-size:13px; font-weight:var(--font-weight-medium); }
+    #town-readiness-dashboard-section .hist { border-color:var(--color-line); }
+    #town-readiness-dashboard-section .hist-count { color:var(--color-primary); font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section .hist-label { color:var(--color-muted); }
+    #town-readiness-dashboard-section .donut, #town-readiness-dashboard-section .map-panel { border-color:var(--color-line); }
+    #town-readiness-dashboard-section .legend-item, #town-readiness-dashboard-section table { font-size:13px; }
+    #town-readiness-dashboard-section th { background:var(--color-soft); color:var(--color-muted); font-size:12px; font-weight:var(--font-weight-bold); letter-spacing:.04em; text-transform:uppercase; }
+    #town-readiness-dashboard-section td { color:var(--color-ink); }
+    #town-readiness-dashboard-section th, #town-readiness-dashboard-section td { border-bottom:1px solid var(--color-soft); }
+    #town-readiness-dashboard-section tbody tr:nth-child(even) { background:#F7F9FD; }
+    #town-readiness-dashboard-section .scroll { border-color:var(--color-line); border-radius:6px; }
+    #town-readiness-dashboard-section .category h3 { border-top:1px solid var(--color-line); color:var(--color-ink); padding-top:24px; }
+    #town-readiness-dashboard-section .category-dashboard { gap:16px; }
+    #town-readiness-dashboard-section .category-metric { padding:12px; }
+    #town-readiness-dashboard-section .category-metric-value, #town-readiness-dashboard-section .progress-value { color:var(--color-ink); font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section .indicator-title, #town-readiness-dashboard-section .check-label, #town-readiness-dashboard-section .progress-title { color:var(--color-ink); font-weight:var(--font-weight-medium); }
+    #town-readiness-dashboard-section .status-badge, #town-readiness-dashboard-section .chip-badge, #town-readiness-dashboard-section .status-pill { border-radius:4px; font-weight:var(--font-weight-medium); }
+    #town-readiness-dashboard-section .status-badge.yes, #town-readiness-dashboard-section .status-pill.success, #town-readiness-dashboard-section .status-pill.info { background:#E8F0FB; border-color:#B8CFF0; color:var(--color-primary); }
+    #town-readiness-dashboard-section .status-badge.no, #town-readiness-dashboard-section .status-pill.neutral { background:#F1F3F7; border-color:var(--color-line); color:var(--color-muted); }
+    #town-readiness-dashboard-section .status-pill.warning { background:#FEF3E2; color:#B45309; }
+    #town-readiness-dashboard-section a { color:var(--color-primary); font-weight:var(--font-weight-medium); }
+    #town-readiness-dashboard-section .resource-empty { color:var(--color-muted); font-size:14px; }
+    #town-readiness-dashboard-section .cec-overview-grid { align-items:stretch; display:grid; gap:24px; grid-template-columns:minmax(0,2.05fr) minmax(300px,.95fr); margin-top:24px; }
+    #town-readiness-dashboard-section .cec-side-stack { display:grid; gap:24px; grid-template-rows:auto 1fr; height:100%; min-width:0; }
+    #town-readiness-dashboard-section .cec-ranking-card, #town-readiness-dashboard-section .cec-side-card { min-width:0; }
+    #town-readiness-dashboard-section .cec-ranking-card { display:flex; flex-direction:column; min-height:0; }
+    #town-readiness-dashboard-section .cec-side-card { display:flex; flex-direction:column; min-height:240px; }
+    #town-readiness-dashboard-section .cec-status-card { min-height:0; }
+    #town-readiness-dashboard-section .cec-ranking-card h3, #town-readiness-dashboard-section .cec-side-card h3 { color:var(--color-ink); font-size:16px; font-weight:var(--font-weight-bold); line-height:1.45; margin-bottom:4px; }
+    #town-readiness-dashboard-section .cec-ranking-card p, #town-readiness-dashboard-section .cec-side-card p { color:var(--color-muted); font-size:14px; line-height:1.55; margin-bottom:18px; }
+    #town-readiness-dashboard-section .cec-ranking-chart { flex:0 0 auto; min-height:0; padding:6px 18px 0 0; }
+    #town-readiness-dashboard-section .cec-rank-plot { display:grid; grid-template-columns:150px minmax(0,1fr); position:relative; }
+    #town-readiness-dashboard-section .cec-rank-row { display:contents; }
+    #town-readiness-dashboard-section .cec-rank-label { align-items:center; color:var(--color-ink); display:flex; font-size:14px; font-weight:var(--font-weight-medium); justify-content:flex-end; line-height:1.2; min-height:26px; padding-right:18px; text-align:right; }
+    #town-readiness-dashboard-section .cec-rank-track { align-items:center; display:flex; min-height:26px; position:relative; }
+    #town-readiness-dashboard-section .cec-rank-track::before { background:#F2F5FA; content:""; display:block; height:22px; left:0; opacity:0; position:absolute; right:0; }
+    #town-readiness-dashboard-section .cec-rank-row:nth-child(8n) .cec-rank-track::before, #town-readiness-dashboard-section .cec-rank-row:nth-child(8n) .cec-rank-label { background:#F7F9FD; }
+    #town-readiness-dashboard-section .cec-rank-bar { border-radius:3px; height:16px; min-width:2px; position:relative; z-index:1; }
+    #town-readiness-dashboard-section .cec-rank-bar.high, #town-readiness-dashboard-section .cec-legend i.designated, #town-readiness-dashboard-section .cec-status-fill.designated { background:#074BA9; }
+    #town-readiness-dashboard-section .cec-rank-bar.middle, #town-readiness-dashboard-section .cec-legend i.in-progress, #town-readiness-dashboard-section .cec-status-fill.in-progress { background:#5A9FD3; }
+    #town-readiness-dashboard-section .cec-rank-bar.low, #town-readiness-dashboard-section .cec-legend i.not-started, #town-readiness-dashboard-section .cec-status-fill.not-started { background:#B0BACE; }
+    #town-readiness-dashboard-section .cec-rank-axis { align-items:center; border-top:1px solid var(--color-line); color:var(--color-muted); display:flex; font-size:12px; grid-column:2; justify-content:space-between; margin-top:4px; padding-top:8px; }
+    #town-readiness-dashboard-section .cec-legend { display:flex; flex-wrap:wrap; gap:22px; margin-top:10px; }
+    #town-readiness-dashboard-section .cec-legend span { align-items:center; color:var(--color-muted); display:inline-flex; font-size:14px; gap:8px; }
+    #town-readiness-dashboard-section .cec-legend i { border-radius:3px; display:inline-block; height:14px; width:14px; }
+    #town-readiness-dashboard-section .cec-distribution-chart { align-items:end; display:flex; flex:1; gap:18px; min-height:150px; padding:8px 0 0 42px; position:relative; }
+    #town-readiness-dashboard-section .cec-distribution-chart::before { border-bottom:1px solid var(--color-line); bottom:30px; content:""; left:42px; position:absolute; right:0; }
+    #town-readiness-dashboard-section .cec-dist-y-axis { bottom:30px; color:var(--color-muted); display:flex; flex-direction:column-reverse; font-size:12px; justify-content:space-between; left:0; position:absolute; top:6px; width:28px; }
+    #town-readiness-dashboard-section .cec-dist-bin { align-items:center; display:flex; flex:1; flex-direction:column; gap:8px; height:100%; justify-content:flex-end; min-width:0; position:relative; }
+    #town-readiness-dashboard-section .cec-dist-bar { background:#074BA9; border-radius:4px 4px 0 0; min-height:2px; width:min(48px,70%); z-index:1; }
+    #town-readiness-dashboard-section .cec-dist-label { color:var(--color-muted); font-size:12px; line-height:1.2; min-height:30px; text-align:center; }
+    #town-readiness-dashboard-section .cec-status-summary { display:grid; gap:14px; margin-top:18px; }
+    #town-readiness-dashboard-section .cec-status-row { display:grid; gap:6px; }
+    #town-readiness-dashboard-section .cec-status-head { align-items:center; color:var(--color-muted); display:flex; font-size:14px; justify-content:space-between; }
+    #town-readiness-dashboard-section .cec-status-count { font-weight:var(--font-weight-medium); }
+    #town-readiness-dashboard-section .cec-status-track { background:#EEF1F7; border-radius:999px; height:8px; overflow:hidden; }
+    #town-readiness-dashboard-section .cec-status-fill { border-radius:999px; height:100%; min-width:2px; }
+    #town-readiness-dashboard-section .explorer-summary-row { align-items:stretch; display:grid; gap:24px; grid-template-columns:minmax(320px,.78fr) minmax(420px,1.22fr); margin:18px 0 0; }
+    #town-readiness-dashboard-section .explorer-primary-group { display:grid; gap:12px; margin-top:18px; }
+    #town-readiness-dashboard-section .explorer-primary-group .profile-head { margin:0 0 16px; }
+    #town-readiness-dashboard-section .municipality-profile-card { background:#ffffff; border:1px solid var(--color-line); border-radius:var(--card-radius); padding:20px 24px; }
+    #town-readiness-dashboard-section .municipality-profile-top { align-items:flex-start; display:flex; flex-direction:column; gap:0; justify-content:flex-start; margin-bottom:18px; }
+    #town-readiness-dashboard-section .municipality-profile-name { color:var(--color-ink); font-size:28px; font-weight:var(--font-weight-bold); line-height:1.05; margin:0 0 6px; }
+    #town-readiness-dashboard-section .municipality-profile-subtitle { color:var(--color-muted); font-size:16px; line-height:1.25; margin:0; }
+    #town-readiness-dashboard-section .profile-pill-row { align-items:center; display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-start; margin-bottom:22px; }
+    #town-readiness-dashboard-section .profile-status-pill { align-items:center; background:#ffffff; border:1px solid #D1D9E6; border-radius:6px; color:var(--color-primary); display:inline-flex; font-size:14px; font-weight:var(--font-weight-bold); line-height:1; min-height:34px; padding:8px 12px; white-space:nowrap; }
+    #town-readiness-dashboard-section .profile-star-pill { color:var(--color-ink); gap:10px; }
+    #town-readiness-dashboard-section .profile-star-icons { display:inline-flex; gap:4px; letter-spacing:0; }
+    #town-readiness-dashboard-section .profile-star.filled { color:#F18A00; }
+    #town-readiness-dashboard-section .profile-star.empty { color:#D8DEE9; }
+    #town-readiness-dashboard-section .profile-star-text { color:var(--color-ink); font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section .profile-score-row { align-items:baseline; display:flex; justify-content:flex-start; gap:10px; margin-bottom:6px; }
+    #town-readiness-dashboard-section .profile-score { color:var(--color-ink); font-size:54px; font-weight:var(--font-weight-bold); line-height:.95; }
+    #town-readiness-dashboard-section .profile-score-unit { color:var(--color-muted); font-size:20px; font-weight:var(--font-weight-medium); margin-left:8px; }
+    #town-readiness-dashboard-section .profile-score-max, #town-readiness-dashboard-section .profile-rank { color:var(--color-muted); font-size:15px; font-weight:var(--font-weight-medium); }
+    #town-readiness-dashboard-section .profile-meter { background:#EEF1F7; border-radius:999px; height:14px; overflow:visible; position:relative; }
+    #town-readiness-dashboard-section .profile-meter-fill { background:var(--color-primary); border-radius:999px; height:100%; min-width:3px; }
+    #town-readiness-dashboard-section .profile-threshold-marker { background:var(--color-primary-dark); bottom:0; position:absolute; top:0; width:2px; }
+    #town-readiness-dashboard-section .profile-meter-labels { color:#8A96AA; display:grid; font-size:13px; grid-template-columns:1fr 1fr 1fr; margin-top:6px; }
+    #town-readiness-dashboard-section .profile-meter-labels span:nth-child(2) { color:var(--color-muted); text-align:center; }
+    #town-readiness-dashboard-section .profile-meter-labels span:last-child { text-align:right; }
+    #town-readiness-dashboard-section .profile-rank { margin-top:10px; }
+    #town-readiness-dashboard-section .profile-head .map-panel, #town-readiness-dashboard-section .profile-head .map-panel iframe, #town-readiness-dashboard-section .explorer-comparison-card { height:430px; min-height:430px; }
+    #town-readiness-dashboard-section .explorer-comparison-card { overflow:hidden; }
+    #town-readiness-dashboard-section .explorer-comparison-card p { margin-bottom:12px; }
+    #town-readiness-dashboard-section .explorer-comparison-chart { padding:4px 16px 0 0; }
+    #town-readiness-dashboard-section .explorer-compare-plot { --compare-label-width:126px; display:grid; grid-template-columns:var(--compare-label-width) minmax(0,1fr); position:relative; }
+    #town-readiness-dashboard-section .explorer-compare-row { display:contents; }
+    #town-readiness-dashboard-section .explorer-compare-label { align-items:center; color:var(--color-ink); display:flex; font-size:12px; font-weight:var(--font-weight-medium); justify-content:flex-end; line-height:1.05; min-height:20px; padding-right:14px; text-align:right; }
+    #town-readiness-dashboard-section .explorer-compare-track { align-items:center; display:flex; min-height:20px; position:relative; }
+    #town-readiness-dashboard-section .explorer-compare-track::before { background:#F7F9FD; content:""; display:none; inset:1px 0; position:absolute; }
+    #town-readiness-dashboard-section .explorer-compare-row.highlight .explorer-compare-track::before { display:none; }
+    #town-readiness-dashboard-section .explorer-compare-row.highlight .explorer-compare-label { background:transparent; }
+    #town-readiness-dashboard-section .explorer-compare-bar { background:#D0DEFA; border-radius:3px; height:13px; min-width:2px; position:relative; z-index:1; }
+    #town-readiness-dashboard-section .explorer-compare-bar.selected { background:var(--color-primary); }
+    #town-readiness-dashboard-section .explorer-compare-threshold { border-left:2px dashed var(--color-primary); bottom:28px; left:calc(var(--compare-label-width) + (100% - var(--compare-label-width)) * var(--threshold-position)); pointer-events:none; position:absolute; top:0; z-index:2; }
+    #town-readiness-dashboard-section .explorer-compare-axis { align-items:center; border-top:1px solid var(--color-line); color:var(--color-muted); display:flex; font-size:12px; grid-column:2; justify-content:space-between; margin-top:4px; padding-top:8px; }
+    #town-readiness-dashboard-section .planning-indicators { background:#ffffff; border:1px solid var(--color-line); border-radius:var(--card-radius); padding:20px 24px; }
+    #town-readiness-dashboard-section .planning-indicators h3 { font-size:17px; margin-bottom:4px; }
+    #town-readiness-dashboard-section .planning-indicators p { font-size:13px; line-height:1.45; margin-bottom:14px; }
+    #town-readiness-dashboard-section .indicator-list { display:grid; gap:0; }
+    #town-readiness-dashboard-section .indicator-row { align-items:center; border-bottom:1px solid var(--color-soft); display:grid; gap:16px; grid-template-columns:minmax(180px,1fr) minmax(120px,auto); padding:9px 0; }
+    #town-readiness-dashboard-section .indicator-row:last-child { border-bottom:0; }
+    #town-readiness-dashboard-section .indicator-row-label { color:var(--color-muted); font-size:13px; font-weight:var(--font-weight-medium); line-height:1.25; }
+    #town-readiness-dashboard-section .indicator-row-value { color:var(--color-ink); font-size:13px; font-weight:var(--font-weight-bold); line-height:1.25; text-align:right; }
+    #town-readiness-dashboard-section .indicator-row-value.positive { color:#1A7A4A; }
+    #town-readiness-dashboard-section .indicator-row-value.negative { color:#B45309; }
+    #town-readiness-dashboard-section .indicator-row-check { color:#1A7A4A; margin-right:8px; }
+    #town-readiness-dashboard-section .indicator-row-x { color:#B45309; margin-right:8px; }
+    #town-readiness-dashboard-section .category-overview { margin-top:0; }
+    #town-readiness-dashboard-section .category-overview p { margin-bottom:14px; }
+    #town-readiness-dashboard-section .category-pair { align-items:stretch; display:grid; gap:24px; grid-template-columns:minmax(0,1fr) minmax(0,1fr); margin-top:var(--space-6); }
+    #town-readiness-dashboard-section .category-pair .category { margin-top:0; }
+    #town-readiness-dashboard-section .category-pair .category h3 { margin-top:0; }
+    #town-readiness-dashboard-section .category-pair .category, #town-readiness-dashboard-section .category-pair .content, #town-readiness-dashboard-section .category-pair .building-panel { display:flex; flex-direction:column; min-height:100%; }
+    #town-readiness-dashboard-section .building-panel { background:#ffffff; border:1px solid var(--color-line); border-radius:var(--card-radius); overflow:hidden; }
+    #town-readiness-dashboard-section .building-panel-title { color:var(--color-ink); font-size:17px; font-weight:var(--font-weight-bold); line-height:1.4; margin:0; padding:16px 20px 4px; }
+    #town-readiness-dashboard-section .building-panel-intro { border-bottom:0; padding:0 20px 14px; }
+    #town-readiness-dashboard-section .building-panel-intro p { color:var(--color-muted); font-size:13px; line-height:1.45; margin:0; }
+    #town-readiness-dashboard-section .building-panel-body { display:flex; flex:1; flex-direction:column; padding:0; }
+    #town-readiness-dashboard-section .building-score-grid { border-top:1px solid var(--color-line); display:grid; gap:0; grid-template-columns:repeat(3,minmax(0,1fr)); margin-bottom:0; }
+    #town-readiness-dashboard-section .housing-score-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    #town-readiness-dashboard-section .building-score-card { background:#ffffff; border:0; border-bottom:1px solid var(--color-line); border-radius:0; display:flex; flex-direction:column; min-width:0; overflow:hidden; padding:20px 24px; }
+    #town-readiness-dashboard-section .building-score-card + .building-score-card { border-left:1px solid var(--color-line); }
+    #town-readiness-dashboard-section .building-score-label { color:var(--color-muted); font-size:15px; font-weight:var(--font-weight-medium); line-height:1.25; margin:0 0 8px; }
+    #town-readiness-dashboard-section .building-score-value { color:var(--color-ink); font-size:clamp(22px, 2.3vw, 28px); font-weight:var(--font-weight-bold); line-height:1; margin:0 0 10px; overflow-wrap:anywhere; }
+    #town-readiness-dashboard-section .building-score-meta { color:var(--color-muted); font-size:clamp(12px, 1.2vw, 14px); font-weight:var(--font-weight-bold); line-height:1.25; margin:auto 0 0; overflow-wrap:anywhere; padding-top:12px; }
+    #town-readiness-dashboard-section .building-score-meta.above { color:#1A7A4A; }
+    #town-readiness-dashboard-section .building-score-meta.below { color:#B45309; }
+    #town-readiness-dashboard-section .building-score-meta.neutral { color:var(--color-muted); }
+    #town-readiness-dashboard-section .average-disclaimer { color:var(--color-muted); font-size:12px; line-height:1.35; margin:10px 24px 14px; }
+    #town-readiness-dashboard-section .building-policy-list { flex:1; padding:0 24px 16px; }
+    #town-readiness-dashboard-section .building-policy-list .indicator-row { padding:13px 0; }
+    #town-readiness-dashboard-section .ev-panel { background:#ffffff; border:1px solid var(--color-line); border-radius:var(--card-radius); margin-top:var(--space-6); overflow:hidden; }
+    #town-readiness-dashboard-section .category:has(.ev-panel) h3 { border-top:0; padding-top:0; }
+    #town-readiness-dashboard-section .ev-panel-head { align-items:center; display:flex; justify-content:space-between; gap:16px; padding:12px 20px 2px; }
+    #town-readiness-dashboard-section .ev-panel-title { color:var(--color-ink); font-size:17px; font-weight:var(--font-weight-bold); line-height:1.4; margin:0; }
+    #town-readiness-dashboard-section .category .ev-panel-title, #town-readiness-dashboard-section .category .workforce-panel-title { border-top:0; margin:0; padding-top:0; }
+    #town-readiness-dashboard-section .ev-panel-subtitle { color:var(--color-muted); font-size:14px; font-weight:var(--font-weight-medium); margin:0; text-align:right; }
+    #town-readiness-dashboard-section .ev-panel-intro { padding:0 20px 10px; }
+    #town-readiness-dashboard-section .ev-panel-intro p { color:var(--color-muted); font-size:13px; line-height:1.45; margin:0; }
+    #town-readiness-dashboard-section .ev-panel-body { border-top:1px solid var(--color-line); display:grid; grid-template-columns:minmax(240px,.62fr) minmax(0,1.38fr); }
+    #town-readiness-dashboard-section .ev-pie-area { align-items:center; border-right:1px solid var(--color-line); display:grid; gap:14px; grid-template-columns:minmax(118px,150px) minmax(0,1fr); min-width:0; padding:22px 24px; }
+    #town-readiness-dashboard-section .ev-pie { align-items:center; background:#D0DEFA; border:1px solid var(--color-line); border-radius:50%; display:flex; height:138px; justify-content:center; position:relative; width:138px; }
+    #town-readiness-dashboard-section .ev-pie::after { background:#ffffff; border:1px solid var(--color-line); border-radius:50%; content:""; inset:36px; position:absolute; }
+    #town-readiness-dashboard-section .ev-pie-center { position:relative; z-index:1; }
+    #town-readiness-dashboard-section .ev-pie-label { background:rgba(255,255,255,.94); border:1px solid rgba(26,38,64,.18); border-radius:999px; color:#1A2640; font-size:11px; font-weight:var(--font-weight-bold); line-height:1; min-width:34px; padding:4px 6px; position:absolute; text-align:center; transform:translate(-50%, -50%); z-index:2; }
+    #town-readiness-dashboard-section .ev-pie-legend { display:grid; gap:8px; }
+    #town-readiness-dashboard-section .ev-pie-legend-item { align-items:center; color:var(--color-muted); display:grid; font-size:13px; gap:8px; grid-template-columns:12px 1fr auto; }
+    #town-readiness-dashboard-section .ev-pie-swatch { border-radius:3px; height:12px; width:12px; }
+    #town-readiness-dashboard-section .ev-metrics-area { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); min-width:0; }
+    #town-readiness-dashboard-section .ev-metrics-area .building-score-card { border-bottom:1px solid var(--color-line); }
+    #town-readiness-dashboard-section .ev-metrics-area .building-score-card:nth-child(3), #town-readiness-dashboard-section .ev-metrics-area .building-score-card:nth-child(4) { border-bottom:0; }
+    #town-readiness-dashboard-section .ev-metrics-area .building-score-card:nth-child(3) { border-left:0; }
+    #town-readiness-dashboard-section .ev-metrics-area .building-score-card:nth-child(even) { border-left:1px solid var(--color-line); }
+    #town-readiness-dashboard-section .ev-metrics-area .average-disclaimer { border-top:1px solid var(--color-line); grid-column:1 / -1; margin:0; padding:10px 24px 12px; }
+    #town-readiness-dashboard-section .ev-policy-list { grid-column:1 / -1; padding:0 24px 16px; }
+    #town-readiness-dashboard-section .ev-policy-list .indicator-row { padding:13px 0; }
+    #town-readiness-dashboard-section .workforce-panel { background:#ffffff; border:1px solid var(--color-line); border-radius:var(--card-radius); margin-top:var(--space-6); overflow:hidden; }
+    #town-readiness-dashboard-section .workforce-panel-head { align-items:flex-start; display:flex; flex-direction:column; gap:6px; justify-content:flex-start; padding:16px 20px; }
+    #town-readiness-dashboard-section .workforce-panel-title { color:var(--color-ink); font-size:17px; font-weight:var(--font-weight-bold); line-height:1.4; margin:0; }
+    #town-readiness-dashboard-section .workforce-panel-description { color:var(--color-muted); font-size:13px; line-height:1.45; margin:0; width:100%; }
+    #town-readiness-dashboard-section .workforce-panel-body { border-top:1px solid var(--color-line); display:grid; grid-template-columns:minmax(300px,.75fr) minmax(0,1.25fr); }
+    #town-readiness-dashboard-section .workforce-column { min-width:0; }
+    #town-readiness-dashboard-section .workforce-column.education-column { display:grid; grid-template-rows:auto 1fr; }
+    #town-readiness-dashboard-section .workforce-column.employment-column { display:grid; grid-template-rows:auto 1fr auto; }
+    #town-readiness-dashboard-section .workforce-column + .workforce-column { border-left:1px solid var(--color-line); }
+    #town-readiness-dashboard-section .workforce-subhead { background:#EEF1F7; border-bottom:1px solid var(--color-line); color:var(--color-muted); font-size:12px; font-weight:var(--font-weight-bold); letter-spacing:.12em; line-height:1.2; padding:12px 20px; text-transform:uppercase; }
+    #town-readiness-dashboard-section .workforce-education-top { display:grid; grid-template-columns:minmax(190px,.7fr) minmax(220px,1fr); min-height:100%; }
+    #town-readiness-dashboard-section .workforce-education-top .building-score-card { border-bottom:0; }
+    #town-readiness-dashboard-section .workforce-institution-summary { padding:18px 20px; }
+    #town-readiness-dashboard-section .workforce-chart-card { padding:18px 20px 22px; }
+    #town-readiness-dashboard-section .workforce-chart-title { color:var(--color-muted); font-size:15px; font-weight:var(--font-weight-medium); line-height:1.3; margin:0 0 12px; }
+    #town-readiness-dashboard-section .workforce-chart { display:grid; gap:3px; }
+    #town-readiness-dashboard-section .workforce-chart-row { align-items:center; display:grid; gap:10px; grid-template-columns:112px minmax(0,1fr); min-height:20px; }
+    #town-readiness-dashboard-section .workforce-chart-label { color:var(--color-ink); font-size:12px; font-weight:var(--font-weight-medium); line-height:1.05; text-align:right; }
+    #town-readiness-dashboard-section .workforce-chart-track { align-items:center; display:flex; min-height:20px; }
+    #town-readiness-dashboard-section .workforce-chart-bar { background:#D0DEFA; border-radius:999px; height:10px; min-width:2px; }
+    #town-readiness-dashboard-section .workforce-chart-bar.selected { background:var(--color-primary); }
+    #town-readiness-dashboard-section .workforce-chart-axis { border-top:1px solid var(--color-line); color:var(--color-muted); display:flex; font-size:11px; justify-content:space-between; margin-left:122px; padding-top:6px; }
+    #town-readiness-dashboard-section .workforce-metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }
+    #town-readiness-dashboard-section .workforce-metric-grid .building-score-card { border-bottom:0; }
+    #town-readiness-dashboard-section .workforce-metric-grid .building-score-card + .building-score-card { border-left:1px solid var(--color-line); }
+    #town-readiness-dashboard-section .workforce-panel .average-disclaimer { border-top:1px solid var(--color-line); margin:0; padding:10px 24px 12px; }
+    #town-readiness-dashboard-section .housing-panel { margin-top:var(--space-6); }
+    #town-readiness-dashboard-section .institution-links { display:grid; gap:14px; list-style:none; margin:0; padding:0; }
+    #town-readiness-dashboard-section .institution-links li { align-items:start; display:grid; gap:12px; grid-template-columns:30px minmax(0,1fr); }
+    #town-readiness-dashboard-section .institution-link-icon { align-items:center; background:#F1F6FF; border-radius:6px; color:var(--color-primary); display:inline-flex; font-size:15px; font-weight:var(--font-weight-bold); height:30px; justify-content:center; line-height:1; text-decoration:none; width:30px; }
+    #town-readiness-dashboard-section .institution-link-title { color:var(--color-primary); display:inline; font-size:15px; font-weight:var(--font-weight-bold); line-height:1.28; text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px; }
+    #town-readiness-dashboard-section .institution-link-title:hover { color:#053A83; }
+    #town-readiness-dashboard-section .institution-empty { color:var(--color-muted); font-size:13px; line-height:1.4; margin:0; }
+    #town-readiness-dashboard-section .nys-breakdown-heading { font-size:17px; line-height:1.4; margin-bottom:4px; }
+    #town-readiness-dashboard-section #overview-kpis { align-items:stretch; gap:14px; }
+    #town-readiness-dashboard-section #overview-kpis .metric { align-items:flex-start; background:#ffffff; border:1px solid #D3DAE6; border-radius:6px; box-shadow:none; display:flex; flex-direction:column; justify-content:space-between; min-height:112px; padding:16px 18px; text-align:left; }
+    #town-readiness-dashboard-section #overview-kpis .metric-title { color:var(--color-muted); display:block; font-size:13px; font-weight:var(--font-weight-bold); letter-spacing:.08em; line-height:1.25; margin:0; min-height:0; order:1; text-align:left; text-transform:uppercase; }
+    #town-readiness-dashboard-section #overview-kpis .metric-value { color:var(--color-ink); font-size:30px; font-weight:var(--font-weight-bold); letter-spacing:0; line-height:1; margin:18px 0 0; order:2; text-align:left; }
+    #town-readiness-dashboard-section .nys-status { align-items:center; display:inline-flex; gap:8px; font-size:13px; font-weight:var(--font-weight-medium); white-space:nowrap; }
+    #town-readiness-dashboard-section .nys-status::before { border-radius:50%; content:""; display:inline-block; height:8px; width:8px; }
+    #town-readiness-dashboard-section .nys-status.completed { color:#1A7A4A; }
+    #town-readiness-dashboard-section .nys-status.completed::before { background:#1A7A4A; }
+    #town-readiness-dashboard-section .nys-status.in-progress { color:#B45309; }
+    #town-readiness-dashboard-section .nys-status.in-progress::before { background:#B45309; }
+    #town-readiness-dashboard-section .nys-status.not-started { color:var(--color-muted); }
+    #town-readiness-dashboard-section .nys-status.not-started::before { background:#B0BACE; }
+    #town-readiness-dashboard-section .nys-total-row td { background:#F7F9FD; font-weight:var(--font-weight-bold); }
+    #town-readiness-dashboard-section .nys-table-wrap th, #town-readiness-dashboard-section .sources-table-wrap th { position:sticky; top:0; z-index:2; }
+    #town-readiness-dashboard-section .sr-only { border:0; clip:rect(0,0,0,0); height:1px; margin:-1px; overflow:hidden; padding:0; position:absolute; white-space:nowrap; width:1px; }
+    #town-readiness-dashboard-section .info-tip { align-items:center; background:#ffffff; border:1px solid #C8D7EA; border-radius:999px; color:var(--color-primary); cursor:help; display:inline-flex; font-family:var(--font-family-base); font-size:11px; font-weight:var(--font-weight-bold); height:18px; justify-content:center; line-height:1; margin-left:6px; padding:0; vertical-align:middle; width:18px; }
+    #town-readiness-dashboard-section .info-tip:hover, #town-readiness-dashboard-section .info-tip:focus-visible { background:var(--color-primary-soft); border-color:var(--color-primary); outline:2px solid rgba(8,73,167,.22); outline-offset:2px; }
+    #town-readiness-dashboard-section .term-with-tip { align-items:center; display:inline-flex; gap:4px; }
+    #town-readiness-dashboard-section .metric-title .info-tip, #town-readiness-dashboard-section h2 .info-tip, #town-readiness-dashboard-section h3 .info-tip, #town-readiness-dashboard-section .indicator-row-label .info-tip, #town-readiness-dashboard-section .cec-legend .info-tip, #town-readiness-dashboard-section .cec-status-head .info-tip { flex:0 0 auto; }
+    .dashboard-tooltip { background:#1A2640; border-radius:6px; box-shadow:0 14px 30px rgba(26,38,64,.18); color:#ffffff; left:0; max-width:320px; opacity:0; padding:14px 16px; pointer-events:none; position:fixed; top:0; transform:translate(12px,12px); transition:opacity .04s linear; z-index:1000; }
+    .dashboard-tooltip.visible { opacity:1; }
+    .tooltip-title { color:#ffffff; font-size:16px; font-weight:var(--font-weight-bold); line-height:1.35; margin:0 0 8px; }
+    .tooltip-subtitle { color:#B0BACE; font-size:14px; line-height:1.4; margin:0 0 10px; }
+    .tooltip-value { color:#B0BACE; font-size:14px; line-height:1.4; margin:0; }
+    .tooltip-value strong { color:#ffffff; font-size:16px; font-weight:var(--font-weight-bold); }
+    @media (max-width: 1180px) {
+      #town-readiness-dashboard-section .ev-panel-body { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .ev-pie-area { border-right:0; border-bottom:1px solid var(--color-line); }
+      #town-readiness-dashboard-section .workforce-panel-body { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .workforce-column + .workforce-column { border-left:0; border-top:1px solid var(--color-line); }
+      #town-readiness-dashboard-section .workforce-metric-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      #town-readiness-dashboard-section .workforce-metric-grid .building-score-card:nth-child(3) { border-left:0; }
+      #town-readiness-dashboard-section .workforce-metric-grid .building-score-card:nth-child(n+3) { border-top:1px solid var(--color-line); }
+      #town-readiness-dashboard-section .housing-score-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      #town-readiness-dashboard-section .housing-score-grid .building-score-card:nth-child(3) { border-left:0; }
+    }
+    @media (max-width: 850px) {
+      #town-readiness-dashboard-section .town-readiness-dashboard-main, body.nav-collapsed #town-readiness-dashboard-section .town-readiness-dashboard-main { margin-left:0; }
+      #town-readiness-dashboard-section .dashboard-content { padding:24px 16px; }
+      #town-readiness-dashboard-section .section-nav { background:var(--color-primary); padding:16px; width:auto; }
+      body.nav-collapsed #town-readiness-dashboard-section .section-nav { padding:16px; width:auto; }
+      #town-readiness-dashboard-section .section-nav button { border-bottom:0; border-radius:6px; }
+      #town-readiness-dashboard-section .section-nav button.active, #town-readiness-dashboard-section .section-nav button:hover { background:rgba(255,255,255,.14); }
+      #town-readiness-dashboard-section .cec-overview-grid { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .cec-side-stack { grid-template-rows:auto; }
+      #town-readiness-dashboard-section .nys-detail-layout { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .cec-ranking-card, #town-readiness-dashboard-section .cec-side-card { min-height:0; }
+      #town-readiness-dashboard-section .cec-rank-plot { grid-template-columns:112px minmax(0,1fr); }
+      #town-readiness-dashboard-section .cec-rank-label { font-size:12px; padding-right:10px; }
+      #town-readiness-dashboard-section .cec-distribution-chart { gap:8px; }
+      #town-readiness-dashboard-section .explorer-summary-row { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .municipality-profile-top, #town-readiness-dashboard-section .profile-score-row { align-items:flex-start; flex-direction:column; }
+      #town-readiness-dashboard-section .profile-pill-row { justify-content:flex-start; }
+      #town-readiness-dashboard-section .municipality-profile-name { font-size:28px; }
+      #town-readiness-dashboard-section .municipality-profile-subtitle { font-size:17px; }
+      #town-readiness-dashboard-section .profile-status-pill { font-size:14px; min-height:34px; }
+      #town-readiness-dashboard-section .profile-score { font-size:44px; }
+      #town-readiness-dashboard-section .profile-score-unit { font-size:18px; margin-left:0; }
+      #town-readiness-dashboard-section .explorer-compare-plot { --compare-label-width:94px; }
+      #town-readiness-dashboard-section .explorer-compare-label { font-size:12px; padding-right:10px; }
+      #town-readiness-dashboard-section .category-pair { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .building-score-grid, #town-readiness-dashboard-section .housing-score-grid { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .building-score-card + .building-score-card { border-left:0; }
+      #town-readiness-dashboard-section .ev-panel-body { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .ev-pie-area { border-right:0; border-bottom:1px solid var(--color-line); grid-template-columns:120px 1fr; }
+      #town-readiness-dashboard-section .ev-pie { height:112px; width:112px; }
+      #town-readiness-dashboard-section .ev-pie::after { inset:30px; }
+      #town-readiness-dashboard-section .ev-metrics-area { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .ev-metrics-area .building-score-card:nth-child(even) { border-left:0; }
+      #town-readiness-dashboard-section .workforce-panel-body, #town-readiness-dashboard-section .workforce-education-top, #town-readiness-dashboard-section .workforce-metric-grid { grid-template-columns:1fr; }
+      #town-readiness-dashboard-section .workforce-column + .workforce-column, #town-readiness-dashboard-section .workforce-metric-grid .building-score-card:nth-child(even), #town-readiness-dashboard-section .workforce-metric-grid .building-score-card + .building-score-card { border-left:0; }
+      #town-readiness-dashboard-section .workforce-metric-grid .building-score-card:nth-child(n+2) { border-top:1px solid var(--color-line); }
+      #town-readiness-dashboard-section .workforce-chart-row { grid-template-columns:88px minmax(0,1fr); }
+      #town-readiness-dashboard-section .workforce-chart-axis { margin-left:98px; }
+    }
+

@@ -22,6 +22,8 @@ node_modules/
 .env
 .env.*
 
-# Local generation workspace; deployed dashboard is committed from outputs/
-work/
+# Local generation workspace; deployed dashboard is committed from outputs/.
+# Keep the dashboard generator tracked because it rebuilds outputs from public/data and src/content.
+work/*
+!work/refine_liceh_dashboard.py
 .vercel

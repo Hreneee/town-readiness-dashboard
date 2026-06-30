@@ -1,0 +1,52 @@
+{% comment %}
+Homepage page template with Town Readiness Assessment dashboard.
+
+Use this template when the dashboard should render with the normal reLI layout enabled.
+Upload town-readiness-dashboard.css and town-readiness-dashboard.js as theme assets.
+Create a partial/snippet named "town_readiness_dashboard" using the contents of:
+nationbuilder/town_readiness_dashboard.liquid
+{% endcomment %}
+
+{% include "breadcrumbs" %}
+
+{% if page.headline.size > 0 %}
+  <h2 class="headline">{{ page.headline }}</h2>
+{% endif %}
+
+<div id="content">
+  <div id="intro" class="intro">
+    <div class="text-content">
+      {{ page.basic.content }}
+    </div>
+  </div>
+
+  {% comment %}
+  DEBUG: Dashboard insertion point.
+  Remove this visible marker after confirming the dashboard appears in the normal reLI layout.
+  {% endcomment %}
+  {% if page.is_homepage? %}
+    <div class="town-readiness-dashboard-debug" style="padding:8px 12px;margin:16px 0;background:#fff3cd;color:#5c4300;font-weight:700;">
+      DEBUG: Town Readiness Dashboard insertion point
+    </div>
+    {% include "town_readiness_dashboard" %}
+  {% endif %}
+
+  {% if page.tags_count > 0 %}
+    <div class="page-tags">
+      {% include "page_tags" with page %}
+    </div>
+  {% endif %}
+
+  {% if page.is_homepage? and site.page_tags contains "homepage" %}
+    {% tag "homepage" with "homepage_widget" %}
+  {% endif %}
+
+  <div class="like-page">
+    <strong>Do you like this page?</strong>
+    {% include "like_page" %}
+  </div>
+
+  {% if page.show_stream? %}
+    {% include "page_stream" %}
+  {% endif %}
+</div>
